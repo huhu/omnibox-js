@@ -45,8 +45,11 @@ class Omnibox {
         let defaultDescription;
 
         render.onInputChanged.addListener(async (input, suggestFn) => {
-            this.defaultSuggestionContent = null;
+            // Set the default suggestion content to input instead null,
+            // this could prevent content null bug in onInputEntered().
+            this.defaultSuggestionContent = input;
             if (!input) {
+                // this.setDefaultSuggestion(this.defaultSuggestionDescription);
                 return;
             }
 
@@ -95,26 +98,27 @@ class Omnibox {
 
             // A flag indicates whether the url navigate success
             let navigated = false;
+            // The first item (aka default suggestion) is special in Chrome extension API,
+            // here the content is the user input.
             if (content === currentInput) {
                 content = beforeNavigate(this.cachedQuery, this.defaultSuggestionContent);
+                result = {
+                    content,
+                    description: defaultDescription,
+                };
                 if (URL_PROTOCOLS.test(content)) {
                     Omnibox.navigateToUrl(content, disposition);
                     navigated = true;
-
-                    result = {
-                        content,
-                        description: defaultDescription,
-                    };
                 }
             } else {
                 // Store raw content before navigate to find the correct result
                 let rawContent = content;
+                result = results.find(item => item.content === rawContent);
                 content = beforeNavigate(this.cachedQuery, content);
                 if (URL_PROTOCOLS.test(content)) {
                     Omnibox.navigateToUrl(content, disposition);
                     navigated = true;
 
-                    result = results.find(item => item.content === rawContent);
                     // Ensure the result.content is the latest,
                     // since the content returned by beforeNavigate() could be different from the raw one.
                     if (result) {
@@ -123,13 +127,13 @@ class Omnibox {
                 }
             }
 
-            if (!navigated && onEmptyNavigate) {
+            if (navigated && afterNavigated) {
+                afterNavigated(this.cachedQuery, result);
+            } else if (onEmptyNavigate) {
                 onEmptyNavigate(content, disposition);
             }
 
-            if (afterNavigated) {
-                afterNavigated(this.cachedQuery, result);
-            }
+            // this.setDefaultSuggestion(this.defaultSuggestionDescription);
         });
     }
 

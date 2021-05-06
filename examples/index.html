@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Omnibox.js</title>
+</head>
+
+<body>
+    <input type="text" id="input">
+</body>
+<script src="../src/query-event.js"></script>
+<script src="../src/index.js"></script>
+<script src="../src/render.js"></script>
+<script>
+    let suggestions = {
+        "ab": "AB",
+        "cd": "CD",
+        "ef": "EF",
+        "gh": "GH",
+        "ij": "IJ",
+        "kl": "KL",
+    };
+    suggestions = Object.entries(suggestions).map(([key, value]) => {
+        return { content: key, description: value }
+    });
+    const render = new Render({
+        inputElement: '#input',
+    });
+    const omnibox = new Omnibox("Omnibox.js", 10);
+    omnibox.bootstrap(render, {
+        onSearch: (query) => {
+            return suggestions;
+        },
+        onAppend: (query) => {
+            return [{
+                content: "omnibox",
+                description: "Omnibox.js",
+            }];
+        },
+    });
+</script>
+
+</html>
