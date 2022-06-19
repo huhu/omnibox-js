@@ -1,14 +1,14 @@
 class Render {
-    constructor({ inputElement }) {
+    constructor({inputElement}) {
         this.onInputChanged = new OnInputChangedListener();
         this.onInputEntered = new OnInputEnteredListener();
 
         this.inputBox = document.querySelector(inputElement);
-        this.inputBox.oninput = (event) => {
+        this.inputBox.oninput = async (event) => {
             let input = event.target.value;
-            this.onInputChanged.listeners.forEach(listener => {
-                listener(input, this.suggest);
-            });
+            for (const listener of this.onInputChanged.listeners) {
+                await listener(input, this.suggest);
+            }
         };
     }
 
