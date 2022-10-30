@@ -29,13 +29,21 @@ class Omnibox {
             query = [args[0]];
             page = parsePage(args[1]);
         } else if (args.length >= 2) {
-            // Case: {keyword} {keyword} {page-turner}
-            query = [args[0], args[1]];
-            if (args[2] && args[2].startsWith(PAGE_TURNER)) {
-                page = parsePage(args[2]);
+            // Case: {keyword} ... {keyword} {page-turner}
+            let lastArg = args[args.length - 1];
+
+            if (lastArg && lastArg.startsWith(PAGE_TURNER)) {
+                page = parsePage(lastArg);
+                if (page > 1) {
+                    // If page > 1, means the last arg is a page tuner,
+                    // we should pop up the last arg.
+                    args.pop();
+                }
             }
+            // The rest keywords is the query.
+            query = args;
         }
-        return {query: query.join(" "), page};
+        return { query: query.join(" "), page };
     }
 
     bootstrap(render, {
@@ -62,7 +70,7 @@ class Omnibox {
             }
 
             currentInput = input;
-            let {query, page} = this.parse(input);
+            let { query, page } = this.parse(input);
             // Always perform search if query is a noCachedQuery, then check whether equals to cachedQuery
             if (this.noCacheQueries.has(query) || this.cachedQuery !== query) {
                 results = await this.performSearch(query);
@@ -73,11 +81,13 @@ class Omnibox {
             }
 
             let totalPage = Math.ceil(results.length / this.maxSuggestionSize);
+            const paginationTip = ` | Page [${page}/${totalPage}], append '${PAGE_TURNER}' to page down`;
             let uniqueUrls = new Set();
             // Slice the page data then format this data.
+            results = results.slice(this.maxSuggestionSize * (page - 1), this.maxSuggestionSize * page);
+            let pageSize = results.length;
             results = results
-                .slice(this.maxSuggestionSize * (page - 1), this.maxSuggestionSize * page)
-                .map(({event, ...item}, index) => {
+                .map(({ event, ...item }, index) => {
                     if (event) {
                         // onAppend result has event.
                         item = event.format(item, index);
@@ -85,14 +95,18 @@ class Omnibox {
                     if (uniqueUrls.has(item.content)) {
                         item.content += `?${uniqueUrls.size + 1}`;
                     }
+                    if (totalPage > 1 && pageSize > 2 && index === pageSize - 1) {
+                        // Add pagination tip in the last item.
+                        item.description += paginationTip;
+                    }
                     uniqueUrls.add(item.content);
                     return item;
                 });
             if (results.length > 0) {
-                let {content, description} = results.shift();
+                let { content, description } = results.shift();
                 // Store the default description temporary.
                 defaultDescription = description;
-                description += ` | Page [${page}/${totalPage}], append '${PAGE_TURNER}' to page down`;
+                description += paginationTip;
                 // this.setDefaultSuggestion(description, content);
                 results.unshift({content, description});
             }
