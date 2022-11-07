@@ -16,7 +16,7 @@
 <script src="../src/render.js"></script>
 <script>
     let suggestions = {
-        "ab": "AB",
+        "ab": "<match>AB</match>",
         "cd": "CD",
         "ef": "EF",
         "gh": "GH",
@@ -29,15 +29,15 @@
     const render = new Render({
         inputElement: '#input',
     });
-    const omnibox = new Omnibox("Omnibox.js", 10);
+    const omnibox = new Omnibox("Omnibox.js");
     omnibox.bootstrap(render, {
         onSearch: (query) => {
-            return suggestions;
+            return suggestions.filter(({ description }) => description.toLowerCase().indexOf(query.toLowerCase()) > -1);
         },
         onAppend: (query) => {
             return [{
                 content: "omnibox",
-                description: "Omnibox.js",
+                description: "Omnibox.js  123",
             }];
         },
     });

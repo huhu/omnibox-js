@@ -6,15 +6,15 @@ class Render {
         this.inputBox = document.querySelector(inputElement);
         let suggestFn = this.suggest.bind(this);
         this.inputBox.oninput = async (event) => {
+            let dropdown = document.querySelector('.omnibox-js-dropdown');
+            if (dropdown) {
+                dropdown.remove();
+            }
+
             let input = event.target.value;
             if (input) {
                 for (const listener of this.onInputChanged.listeners) {
                     await listener(input, suggestFn);
-                }
-            } else {
-                let dropdown = document.querySelector('.omnibox-js-dropdown');
-                if (dropdown) {
-                    dropdown.remove();
                 }
             }
         };
