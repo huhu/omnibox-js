@@ -16,12 +16,12 @@
 <script src="../src/render.js"></script>
 <script>
     let suggestions = {
-        "ab": "<match>AB</match>",
-        "cd": "CD",
-        "ef": "EF",
-        "gh": "GH",
-        "ij": "IJ",
-        "kl": "KL",
+        "https://github.com": "Github",
+        "https://google.com": "Google",
+        "https://apple.com": "Apple",
+        "https://netflix.com": "Netflix",
+        "https://youtube.com": "YouTube",
+        "https://twitter.com": "Twitter",
     };
     suggestions = Object.entries(suggestions).map(([key, value]) => {
         return { content: key, description: value }
