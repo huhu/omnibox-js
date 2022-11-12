@@ -54,7 +54,7 @@ class Omnibox {
         beforeNavigate,
         afterNavigated
     }) {
-        this.globalEvent = new QueryEvent({onSearch, onFormat, onAppend});
+        this.globalEvent = new QueryEvent({ onSearch, onFormat, onAppend });
         // this.setDefaultSuggestion(this.defaultSuggestionDescription);
         let results;
         let currentInput;
@@ -108,7 +108,7 @@ class Omnibox {
                 defaultDescription = description;
                 description += paginationTip;
                 // this.setDefaultSuggestion(description, content);
-                results.unshift({content, description});
+                results.unshift({ content, description });
             }
             suggestFn(results);
         });
@@ -240,10 +240,20 @@ class Omnibox {
     static navigateToUrl(url, disposition) {
         url = url.replace(/\?\d+$/ig, "");
         if (disposition === "currentTab") {
-            location.href = url;
+            if (chrome && chrome.tabs) {
+                chrome.tabs.query({ active: true }, tab => {
+                    chrome.tabs.update(tab.id, { url });
+                });
+            } else {
+                location.href = url;
+            }
         } else {
             // newForegroundTab, newBackgroundTab
-            window.open(url);
+            if (chrome && chrome.tabs) {
+                chrome.tabs.create({ url });
+            } else {
+                window.open(url);
+            }
         }
     }
 }
