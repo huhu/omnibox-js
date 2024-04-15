@@ -1,14 +1,14 @@
 class QueryEvent {
     constructor({
-                    onSearch,
-                    onFormat = undefined,
-                    onAppend = undefined,
-                    prefix = undefined,
-                    regex = undefined,
-                    defaultSearch = false,
-                    isDefaultSearch = undefined,
-                    searchPriority = 0,
-                }) {
+        onSearch,
+        onFormat = undefined,
+        onAppend = undefined,
+        prefix = undefined,
+        regex = undefined,
+        defaultSearch = false,
+        isDefaultSearch = undefined,
+        searchPriority = 0,
+    }) {
         // The search function which should return a object array.
         this.onSearch = onSearch;
         // The format function which should return {content, description} object.
