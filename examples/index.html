@@ -13,6 +13,10 @@
     <input type="text" id="input">
 </body>
 <script src="../src/query-event.js"></script>
+<script src="compat.js"></script>
+<script src="algorithm.js"></script>
+<script src="crates-index.js"></script>
+<script src="crate-searcher.js"></script>
 <script src="../src/index.js"></script>
 <script src="../src/render.js"></script>
 <script>
@@ -27,6 +31,8 @@
     suggestions = Object.entries(suggestions).map(([key, value]) => {
         return { content: key, description: value }
     });
+    const c = new Compat();
+    const crateSearcher = new CrateSearch(window.mapping, window.crateIndex);
     const render = new Render({
         inputElement: '#input',
     });
@@ -34,11 +40,27 @@
     omnibox.bootstrap(render, {
         onSearch: (query) => {
             return suggestions.filter(({ description }) => description.toLowerCase().indexOf(query.toLowerCase()) > -1);
+        }
+    });
+
+    omnibox.addPrefixQueryEvent("!", {
+        isDefaultSearch: () => {
+            return true;
+        },
+        onSearch: (query) => {
+            return crateSearcher.search(query);
+        },
+        onFormat: (index, crate) => {
+            return {
+                content: `https://docs.rs/${crate.id}`,
+                description: `${c.capitalize("docs.rs")}: ${c.match(crate.id)} v${crate.version} - ${c.dim(c.escape(c.eliminateTags(crate.description)))}`,
+            };
         },
         onAppend: (query) => {
+            let keyword = query.replace(/[!\s]/g, "");
             return [{
-                content: "omnibox",
-                description: "Omnibox.js  123",
+                content: "https://docs.rs/releases/search?query=" + encodeURIComponent(keyword),
+                description: "Search Rust crates for " + c.match(keyword) + " on https://docs.rs",
             }];
         },
     });
