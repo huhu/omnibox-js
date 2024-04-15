@@ -108,7 +108,11 @@ class Render {
                     await listener(content, this.disposition);
                 }
             };
-            li.innerHTML = parseOmniboxDescription(description);
+            let a = document.createElement('a');
+            a.setAttribute("target", "_blank");
+            a.setAttribute("href", content);
+            a.innerHTML = parseOmniboxDescription(description);
+            li.appendChild(a);
             ul.appendChild(li);
         }
         this.inputBox.insertAdjacentElement('afterend', ul);

@@ -13,7 +13,20 @@
     padding: 0.5rem 1rem;
 }
 
-.omn-selected {
+.omn-dropdown-item > a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.omn-dropdown-item > a:visited{
+    color: inherit;
+}
+
+.omn-dropdown-item:hover {
+    cursor: pointer;
+}
+
+.omn-selected,.omn-dropdown-item:hover  {
     background-color: #e8e8e9;
 }
 
