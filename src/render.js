@@ -12,12 +12,16 @@ class Render {
         let suggestFn = this.suggest.bind(this);
         this.inputBox.oninput = async (event) => {
             this.clearDropdown();
+            this.inputBox.classList.add("omn-filled");
 
-            let input = event.target.value;
-            if (input) {
+            let inputValue = event.target.value;
+            console.log(inputValue);
+            if (inputValue) {
                 for (const listener of this.onInputChanged.listeners) {
-                    await listener(input, suggestFn);
+                    await listener(inputValue, suggestFn);
                 }
+            } else {
+                this.inputBox.classList.remove("omn-filled");
             }
         };
 
@@ -79,6 +83,7 @@ class Render {
                 }
                 case 'Escape': {
                     this.clearDropdown();
+                    this.inputBox.classList.remove("omn-filled");
                     break;
                 }
             }
