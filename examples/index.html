@@ -36,6 +36,7 @@
     const crateSearcher = new CrateSearch(window.mapping, window.crateIndex);
     const omnibox = new Omnibox({
         el: "#input",
+        icon: "https://rust.extension.sh/logo.png",
         defaultSuggestion: "Omnibox.js"
     });
     omnibox.bootstrap({

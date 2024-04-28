@@ -48,6 +48,8 @@ class Render {
             console.log('keyup:', event);
             switch (event.code) {
                 case 'Enter': {
+                    event.stopImmediatePropagation();
+                    event.preventDefault();
                     let selected = document.querySelector('.omn-selected');
                     if (selected) {
                         if (event.metaKey) {
@@ -128,8 +130,10 @@ class Render {
         for (let [index, { content, description }] of suggestions.entries()) {
             let li = document.createElement("div");
             li.classList.add("omn-dropdown-item");
-            li.innerHTML = `<div data-content="${content}">
-                            <a href="${content}">${parseOmniboxDescription(description)}
+            li.setAttribute("data-content", content);
+            li.innerHTML = `<div><a href="${content}">
+                            ${this.icon ? `<img src=\"${this.icon}\"/>` : ""}
+                            ${parseOmniboxDescription(description)}
                             </a></div>`;
             if (index === 0) {
                 // Always select the first item by default.

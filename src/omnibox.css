@@ -63,6 +63,13 @@
   cursor: pointer;
 }
 
+.omn-dropdown-item img {
+    width: 18px;
+    height: 18px;
+    padding: 2px;
+    vertical-align: middle;
+}
+
 .omn-selected {
   border-left: 5px #3168cb solid;
   /* box-sizing: content-box; */

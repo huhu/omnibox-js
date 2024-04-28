@@ -4,7 +4,7 @@ const URL_PROTOCOLS = /^(https?|file|chrome-extension|moz-extension):\/\//i;
 class Omnibox {
     constructor({ el, icon, defaultSuggestion, maxSuggestionSize = 8 }) {
         if (el) {
-            this.render = new Render({ el });
+            this.render = new Render({ el, icon });
         } else if (chrome && chrome.omnibox) {
             this.render = chrome.omnibox;
         } else {
