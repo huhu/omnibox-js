@@ -3,7 +3,7 @@ const DISPOSITION_FOREGROUND_TAB = 'newForegroundTab'; // alt + enter
 const DISPOSITION_BACKROUND_TAB = 'newBackgroundTab'; // meta + enter
 
 class Render {
-    constructor({ el }) {
+    constructor({ el, icon }) {
         let element = document.querySelector(el);
         if (!element) {
             throw new Error(`not element found: ${el}`);
@@ -16,7 +16,6 @@ class Render {
         if (element.childNodes.length > 0) {
             throw new Error("The `el` element should have no child nodes");
         }
-
         element.style.position = "relative";
         element.innerHTML = `<textarea class="omn-input"
             autocapitalize="off" autocomplete="off" autocorrect="off" 
@@ -24,6 +23,7 @@ class Render {
             spellcheck="false"></textarea>
         `;
         this.inputBox = element.querySelector("textarea");
+        this.icon = icon;
         this.onInputChanged = new OnInputChangedListener();
         this.onInputEntered = new OnInputEnteredListener();
         this.disposition = DISPOSITION_CURRENT_TAB;
@@ -48,7 +48,7 @@ class Render {
             console.log('keyup:', event);
             switch (event.code) {
                 case 'Enter': {
-                    let selected = document.querySelector('.omn-dropdown-item.omn-selected');
+                    let selected = document.querySelector('.omn-selected');
                     if (selected) {
                         if (event.metaKey) {
                             this.disposition = DISPOSITION_BACKROUND_TAB;
@@ -66,7 +66,7 @@ class Render {
                     break;
                 }
                 case 'ArrowUp': {
-                    let selected = document.querySelector('.omn-dropdown-item.omn-selected');
+                    let selected = document.querySelector('.omn-selected');
                     if (selected) {
                         if (selected.previousElementSibling) {
                             selected.previousElementSibling.classList.add('omn-selected');
@@ -84,7 +84,7 @@ class Render {
                     break;
                 }
                 case 'ArrowDown': {
-                    let selected = document.querySelector('.omn-dropdown-item.omn-selected');
+                    let selected = document.querySelector('.omn-selected');
                     if (selected) {
                         if (selected.nextElementSibling) {
                             selected.nextElementSibling.classList.add('omn-selected');
@@ -124,26 +124,20 @@ class Render {
         gapline.classList.add("omn-gapline");
         dropdown.appendChild(gapline);
 
+        let container = document.createElement("div");
         for (let [index, { content, description }] of suggestions.entries()) {
-            let li = document.createElement('div');
-            li.setAttribute('data-content', content);
-            li.classList.add('omn-dropdown-item');
+            let li = document.createElement("div");
+            li.classList.add("omn-dropdown-item");
+            li.innerHTML = `<div data-content="${content}">
+                            <a href="${content}">${parseOmniboxDescription(description)}
+                            </a></div>`;
             if (index === 0) {
                 // Always select the first item by default.
                 li.classList.add('omn-selected');
             }
-            li.onclick = async () => {
-                for (const listener of this.onInputEntered.listeners) {
-                    await listener(content, this.disposition);
-                }
-            };
-            let a = document.createElement('a');
-            a.setAttribute("target", "_blank");
-            a.setAttribute("href", content);
-            a.innerHTML = parseOmniboxDescription(description);
-            li.appendChild(a);
-            dropdown.appendChild(li);
+            container.appendChild(li);
         }
+        dropdown.appendChild(container);
         this.inputBox.insertAdjacentElement('afterend', dropdown);
     }
 }

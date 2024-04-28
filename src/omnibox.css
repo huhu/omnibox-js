@@ -50,17 +50,22 @@
   padding: 0.5rem 1rem;
 }
 
-.omn-dropdown-item > a {
+.omn-dropdown-item a {
   text-decoration: none;
   color: inherit;
 }
 
-.omn-dropdown-item > a:visited {
+.omn-dropdown-item a:visited {
   color: inherit;
 }
 
 .omn-dropdown-item:hover {
   cursor: pointer;
+}
+
+.omn-selected {
+  border-left: 5px #3168cb solid;
+  /* box-sizing: content-box; */
 }
 
 .omn-selected,

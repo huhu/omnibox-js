@@ -2,7 +2,7 @@ const PAGE_TURNER = "-";
 const URL_PROTOCOLS = /^(https?|file|chrome-extension|moz-extension):\/\//i;
 
 class Omnibox {
-    constructor({ el, defaultSuggestion, maxSuggestionSize = 8 }) {
+    constructor({ el, icon, defaultSuggestion, maxSuggestionSize = 8 }) {
         if (el) {
             this.render = new Render({ el });
         } else if (chrome && chrome.omnibox) {
