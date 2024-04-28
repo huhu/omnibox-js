@@ -17,9 +17,10 @@ class Render {
             throw new Error("The `el` element should have no child nodes");
         }
 
+        element.style.position = "relative";
         element.innerHTML = `<textarea class="omn-input"
             autocapitalize="off" autocomplete="off" autocorrect="off" 
-            maxlength="2048" name="q" role="combobox" rows="1" 
+            maxlength="2048" role="combobox" rows="1" style="resize:none"
             spellcheck="false"></textarea>
         `;
         this.inputBox = element.querySelector("textarea");
