@@ -3,11 +3,29 @@ const DISPOSITION_FOREGROUND_TAB = 'newForegroundTab'; // alt + enter
 const DISPOSITION_BACKROUND_TAB = 'newBackgroundTab'; // meta + enter
 
 class Render {
-    constructor({ inputElement }) {
+    constructor({ el }) {
+        let element = document.querySelector(el);
+        if (!element) {
+            throw new Error(`not element found: ${el}`);
+        }
+
+        if (element.tagName !== "DIV") {
+            throw new Error("The `el` can only be `div` tag");
+        }
+
+        if (element.childNodes.length > 0) {
+            throw new Error("The `el` element should have no child nodes");
+        }
+
+        element.innerHTML = `<textarea class="omn-input"
+            autocapitalize="off" autocomplete="off" autocorrect="off" 
+            maxlength="2048" name="q" role="combobox" rows="1" 
+            spellcheck="false"></textarea>
+        `;
+        this.inputBox = element.querySelector("textarea");
         this.onInputChanged = new OnInputChangedListener();
         this.onInputEntered = new OnInputEnteredListener();
         this.disposition = DISPOSITION_CURRENT_TAB;
-        this.inputBox = document.querySelector(inputElement);
 
         let suggestFn = this.suggest.bind(this);
         this.inputBox.oninput = async (event) => {
@@ -98,10 +116,15 @@ class Render {
     }
 
     suggest(suggestions) {
-        let ul = document.createElement('ul');
-        ul.classList.add('omn-dropdown');
+        let dropdown = document.createElement('div');
+        dropdown.classList.add('omn-dropdown');
+
+        let gapline = document.createElement("div");
+        gapline.classList.add("omn-gapline");
+        dropdown.appendChild(gapline);
+
         for (let [index, { content, description }] of suggestions.entries()) {
-            let li = document.createElement('li');
+            let li = document.createElement('div');
             li.setAttribute('data-content', content);
             li.classList.add('omn-dropdown-item');
             if (index === 0) {
@@ -118,9 +141,9 @@ class Render {
             a.setAttribute("href", content);
             a.innerHTML = parseOmniboxDescription(description);
             li.appendChild(a);
-            ul.appendChild(li);
+            dropdown.appendChild(li);
         }
-        this.inputBox.insertAdjacentElement('afterend', ul);
+        this.inputBox.insertAdjacentElement('afterend', dropdown);
     }
 }
 

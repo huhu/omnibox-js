@@ -10,7 +10,8 @@
 </head>
 
 <body>
-    <input class="omn-input" type="text" id="input" autocomplete="off">
+    <!-- <textarea class="omn-input" type="text" id="input" autocomplete="off"></textarea> -->
+    <div id="input"></div>
 </body>
 <script src="../src/query-event.js"></script>
 <script src="compat.js"></script>
@@ -33,11 +34,11 @@
     });
     const c = new Compat();
     const crateSearcher = new CrateSearch(window.mapping, window.crateIndex);
-    const render = new Render({
-        inputElement: '#input',
+    const omnibox = new Omnibox({
+        el: "#input",
+        defaultSuggestion: "Omnibox.js"
     });
-    const omnibox = new Omnibox("Omnibox.js");
-    omnibox.bootstrap(render, {
+    omnibox.bootstrap({
         onSearch: (query) => {
             return suggestions.filter(({ description }) => description.toLowerCase().indexOf(query.toLowerCase()) > -1);
         }

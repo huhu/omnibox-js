@@ -2,7 +2,15 @@ const PAGE_TURNER = "-";
 const URL_PROTOCOLS = /^(https?|file|chrome-extension|moz-extension):\/\//i;
 
 class Omnibox {
-    constructor(defaultSuggestion, maxSuggestionSize = 8) {
+    constructor({ el, defaultSuggestion, maxSuggestionSize = 8 }) {
+        if (el) {
+            this.render = new Render({ el });
+        } else if (chrome && chrome.omnibox) {
+            this.render = chrome.omnibox;
+        } else {
+            throw new Error("No element provided");
+        }
+
         this.maxSuggestionSize = maxSuggestionSize;
         this.defaultSuggestionDescription = defaultSuggestion;
         this.defaultSuggestionContent = null;
@@ -50,7 +58,7 @@ class Omnibox {
         return { query: query.join(" "), page };
     }
 
-    bootstrap(render, {
+    bootstrap({
         onSearch,
         onFormat,
         onAppend,
@@ -64,7 +72,7 @@ class Omnibox {
         let currentInput;
         let defaultDescription;
 
-        render.onInputChanged.addListener(async (input, suggestFn) => {
+        this.render.onInputChanged.addListener(async (input, suggestFn) => {
             // Set the default suggestion content to input instead null,
             // this could prevent content null bug in onInputEntered().
             this.defaultSuggestionContent = input;
@@ -117,7 +125,7 @@ class Omnibox {
             suggestFn(results);
         });
 
-        render.onInputEntered.addListener(async (content, disposition) => {
+        this.render.onInputEntered.addListener(async (content, disposition) => {
             let result;
             // Give beforeNavigate a default function
             beforeNavigate = beforeNavigate || (async (_, s) => s);
