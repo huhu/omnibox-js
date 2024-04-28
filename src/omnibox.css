@@ -48,6 +48,7 @@
 
 .omn-dropdown-item {
   padding: 0.5rem 1rem;
+  display: flex;
 }
 
 .omn-dropdown-item a {
@@ -64,15 +65,25 @@
 }
 
 .omn-dropdown-item img {
-    width: 18px;
-    height: 18px;
-    padding: 2px;
-    vertical-align: middle;
+  width: 18px;
+  height: 18px;
+  padding: 2px;
+  vertical-align: middle;
 }
 
-.omn-selected {
-  border-left: 5px #3168cb solid;
-  /* box-sizing: content-box; */
+.omn-dropdown-indicator {
+  display: none;
+  position: absolute;
+  box-sizing: border-box;
+  left: 0;
+  top: 0;
+  height: 100%;
+  border: 2px #3168cb solid;
+  border-radius: 0 10px 10px 0;
+}
+
+.omn-selected .omn-dropdown-indicator {
+  display: block;
 }
 
 .omn-selected,

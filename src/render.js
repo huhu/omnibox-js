@@ -130,8 +130,11 @@ class Render {
         for (let [index, { content, description }] of suggestions.entries()) {
             let li = document.createElement("div");
             li.classList.add("omn-dropdown-item");
+            li.style.position = "relative";
             li.setAttribute("data-content", content);
-            li.innerHTML = `<div><a href="${content}">
+            li.innerHTML = `<div class="omn-dropdown-indicator"></div>
+                            <div>
+                            <a href="${content}">
                             ${this.icon ? `<img src=\"${this.icon}\"/>` : ""}
                             ${parseOmniboxDescription(description)}
                             </a></div>`;
