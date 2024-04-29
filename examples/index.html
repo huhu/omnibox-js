@@ -42,6 +42,12 @@
     omnibox.bootstrap({
         onSearch: (query) => {
             return suggestions.filter(({ description }) => description.toLowerCase().indexOf(query.toLowerCase()) > -1);
+        },
+        onAppend: (query) => {
+            return [{
+                content: `https://google.com/search?q=${query}`,
+                description: `Search <match>${query}</match> on google`,
+            }]
         }
     });
 

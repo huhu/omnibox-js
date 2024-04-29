@@ -69,6 +69,7 @@ class Omnibox {
         this.globalEvent = new QueryEvent({ onSearch, onFormat, onAppend });
         // this.setDefaultSuggestion(this.defaultSuggestionDescription);
         let results;
+        let appendixes = [];
         let currentInput;
         let defaultDescription;
 
@@ -85,7 +86,10 @@ class Omnibox {
             let { query, page } = this.parse(input);
             // Always perform search if query is a noCachedQuery, then check whether equals to cachedQuery
             if (this.noCacheQueries.has(query) || this.cachedQuery !== query) {
-                results = await this.performSearch(query);
+                let searchResult = await this.performSearch(query);
+                results = searchResult.result;
+                appendixes = searchResult.appendixes;
+
                 this.cachedQuery = query;
                 this.cachedResult = results;
             } else {
@@ -101,11 +105,15 @@ class Omnibox {
             results = results
                 .map(({ event, ...item }, index) => {
                     if (event) {
-                        // onAppend result has event.
+                        // onAppend result has no event.
                         item = event.format(item, index);
                     }
                     if (uniqueUrls.has(item.content)) {
                         item.content += `?${uniqueUrls.size + 1}`;
+                    }
+                    if (index == 0) {
+                        // Add pagination tip in the first item.
+                        item.description += paginationTip;
                     }
                     if (totalPage > 1 && pageSize > 2 && index === pageSize - 1) {
                         // Add pagination tip in the last item.
@@ -114,14 +122,15 @@ class Omnibox {
                     uniqueUrls.add(item.content);
                     return item;
                 });
-            if (results.length > 0) {
-                let { content, description } = results.shift();
-                // Store the default description temporary.
-                defaultDescription = description;
-                description += paginationTip;
-                // this.setDefaultSuggestion(description, content);
-                results.unshift({ content, description });
-            }
+            // if (results.length > 0) {
+            // let { content, description } = results.shift();
+            // // Store the default description temporary.
+            // defaultDescription = description;
+            // description += paginationTip;
+            // // this.setDefaultSuggestion(description, content);
+            // results.unshift({ content, description });
+            // }
+            results.push(...appendixes);
             suggestFn(results);
         });
 
@@ -173,6 +182,7 @@ class Omnibox {
 
     async performSearch(query) {
         let result;
+        let appendixes = [];
         let matchedEvent = this.queryEvents
             .sort((a, b) => {
                 // Descend sort query events by prefix length to prioritize
@@ -188,7 +198,7 @@ class Omnibox {
         if (matchedEvent) {
             result = await matchedEvent.performSearch(query);
             if (matchedEvent.onAppend) {
-                result.push(...matchedEvent.onAppend(query));
+                appendixes.push(...matchedEvent.onAppend(query));
             }
         } else {
             result = await this.globalEvent.performSearch(query);
@@ -212,11 +222,11 @@ class Omnibox {
             }
 
             if (this.globalEvent.onAppend) {
-                result.push(...this.globalEvent.onAppend(query));
+                appendixes.push(...this.globalEvent.onAppend(query));
             }
-            result.push(...defaultSearchAppendixes);
+            appendixes.push(...defaultSearchAppendixes);
         }
-        return result;
+        return { result, appendixes };
     }
 
     addNoCacheQueries(...queries) {
