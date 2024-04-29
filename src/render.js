@@ -29,7 +29,7 @@ class Render {
         this.disposition = DISPOSITION_CURRENT_TAB;
 
         let suggestFn = this.suggest.bind(this);
-        this.inputBox.oninput = async (event) => {
+        this.inputBox.addEventListener("input", async (event) => {
             this.clearDropdown();
             this.inputBox.classList.add("omn-filled");
 
@@ -42,14 +42,18 @@ class Render {
             } else {
                 this.inputBox.classList.remove("omn-filled");
             }
-        };
+        });
+        this.inputBox.addEventListener("keydown", (event) => {
+            if (event.key === 'ArrowUp' || event.key === 'ArrowDown' || event.key == "Enter") {
+                // Prevent the default behavior of arrow up and arrow down keys
+                event.preventDefault();
+            }
+        });
 
         document.addEventListener('keyup', async (event) => {
             console.log('keyup:', event);
             switch (event.code) {
                 case 'Enter': {
-                    event.stopImmediatePropagation();
-                    event.preventDefault();
                     let selected = document.querySelector('.omn-selected');
                     if (selected) {
                         if (event.metaKey) {
