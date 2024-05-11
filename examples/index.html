@@ -10,17 +10,15 @@
 </head>
 
 <body>
-    <!-- <textarea class="omn-input" type="text" id="input" autocomplete="off"></textarea> -->
     <div id="input" style="width: 800px; margin: 50px auto;"></div>
 </body>
-<script src="../src/query-event.js"></script>
 <script src="compat.js"></script>
 <script src="algorithm.js"></script>
 <script src="crates-index.js"></script>
 <script src="crate-searcher.js"></script>
-<script src="../src/index.js"></script>
-<script src="../src/render.js"></script>
-<script>
+<script type="module">
+    import { Omnibox, QueryEvent, Render } from "../src/index.js";
+
     let suggestions = {
         "https://github.com": "Github",
         "https://google.com": "Google",

@@ -44,7 +44,7 @@ class Render {
             }
         });
         this.inputBox.addEventListener("keydown", (event) => {
-            if (event.key === 'ArrowUp' || event.key === 'ArrowDown' || event.key == "Enter") {
+            if (event.key === 'ArrowUp' || event.key === 'ArrowDown' || event.key === "Enter") {
                 // Prevent the default behavior of arrow up and arrow down keys
                 event.preventDefault();
             }
@@ -235,3 +235,5 @@ function parseOmniboxDescription(input) {
 
     return description;
 }
+
+export default Render;
