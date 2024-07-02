@@ -1,5 +1,6 @@
 export default class QueryEvent {
     constructor({
+        name,
         onSearch,
         onFormat = undefined,
         onAppend = undefined,
@@ -14,6 +15,8 @@ export default class QueryEvent {
         // The format function which should return {content, description} object.
         this.onFormat = onFormat;
         this.onAppend = onAppend;
+
+        this.name = name;
         this.prefix = prefix;
         this.regex = regex;
         // Whether enable the query as a default search.
@@ -40,9 +43,9 @@ export default class QueryEvent {
     }
 
     // Format the result item.
-    format(item, index) {
+    async format(item, index) {
         if (this.onFormat) {
-            item = this.onFormat(index, item, this.searchedInput);
+            item = await this.onFormat(index, item, this.searchedInput);
         }
         return item;
     }

@@ -1,14 +1,5 @@
-class Compat {
-    constructor() {
-        // Firefox doesn't support tags in search suggestion.
-        this.tagged = this.browserType() !== "firefox" ?
-            (tag, str) => `<${tag}>${str}</${tag}>` :
-            (_, str) => str;
-        this.match = (str) => this.tagged("match", str);
-        this.dim = (str) => this.tagged("dim", str);
-    }
-
-    browserType() {
+export default class Compat {
+    static browserType() {
         let userAgent = navigator.userAgent.toLowerCase();
         // The order is matter. Do not change it! 
         // You should know what you are doing.
@@ -23,14 +14,18 @@ class Compat {
         return "unknown";
     }
 
-    omniboxPageSize() {
-        return { "firefox": 6, "edge": 7, "chrome": 8, "unknown": 6 }[this.browserType()];
+    static isRunningInWebExtension() {
+        return typeof chrome === "object" && chrome.runtime
+    }
+
+    static omniboxPageSize() {
+        return { "firefox": 6, "edge": 7, "chrome": 8, "unknown": 6 }[Compat.browserType()];
     }
 
     // Escape the special characters to display them as text.
-    escape(str) {
+    static escape(str) {
         str = str || "";
-        if (this.browserType() === "firefox") {
+        if (Compat.browserType() === "firefox") {
             // Firefox support <,> in omnibox and doesn't support escaped characters.
             // So we can unescape them.
             return str
@@ -42,7 +37,7 @@ class Compat {
         } else {
             // Chromium based browsers not support <,> in omnibox.
             // We should escape them to avoid xml parse error.
-            return this.escapeAmpersand(str)
+            return Compat.escapeAmpersand(str)
                 .replace(/</g, "&lt;")
                 .replace(/>/g, "&gt;")
                 .replace(/"/g, "&quot;")
@@ -52,26 +47,26 @@ class Compat {
 
     // Escape ampersand & (with spaces around) to &amp;.
     // For example, "a & b" => "a &amp; b"
-    escapeAmpersand(str) {
+    static escapeAmpersand(str) {
         return str.replace(" & ", " &amp; ");
     }
 
-    normalizeDate(date) {
+    static normalizeDate(date) {
         let month = '' + (date.getMonth() + 1), day = '' + date.getDate(), year = date.getFullYear();
         return [year, month.padStart(2, "0"), day.padStart(2, "0")].join('-');
     }
 
-    capitalize(value) {
+    static capitalize(value) {
         if (value) {
             return value.charAt(0).toUpperCase() + value.slice(1);
         }
         return "";
     }
 
-    eliminateTags(value) {
+    static eliminateTags(value) {
         if (value) {
-            return value.replace(/<\/?(match|dim|code|em|strong)>/g, "");
+            return value.replace(/<\/?(match|dim|code|em|strong|span)>/g, "");
         }
         return "";
     }
-}
+};

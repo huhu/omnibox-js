@@ -3,7 +3,7 @@ const DISPOSITION_FOREGROUND_TAB = 'newForegroundTab'; // alt + enter
 const DISPOSITION_BACKROUND_TAB = 'newBackgroundTab'; // meta + enter
 
 class Render {
-    constructor({ el, icon }) {
+    constructor({ el, icon, placeholder }) {
         let element = document.querySelector(el);
         if (!element) {
             throw new Error(`not element found: ${el}`);
@@ -17,41 +17,49 @@ class Render {
             throw new Error("The `el` element should have no child nodes");
         }
         element.style.position = "relative";
-        element.innerHTML = `<textarea class="omn-input"
+        element.innerHTML = `<div class="omn-container">
+            <textarea class="omn-input"
             autocapitalize="off" autocomplete="off" autocorrect="off" 
             maxlength="2048" role="combobox" rows="1" style="resize:none"
-            spellcheck="false"></textarea>
+            spellcheck="false"></textarea></div>
         `;
+        this.container = document.querySelector(".omn-container");
         this.inputBox = element.querySelector("textarea");
+        if (placeholder) {
+            this.inputBox.setAttribute("placeholder", placeholder);
+        }
         this.icon = icon;
         this.onInputChanged = new OnInputChangedListener();
         this.onInputEntered = new OnInputEnteredListener();
         this.disposition = DISPOSITION_CURRENT_TAB;
 
         let suggestFn = this.suggest.bind(this);
-        this.inputBox.addEventListener("input", async (event) => {
-            this.clearDropdown();
-            this.inputBox.classList.add("omn-filled");
-
+        this.trigger = async (event) => {
             let inputValue = event.target.value;
-            console.log(inputValue);
             if (inputValue) {
                 for (const listener of this.onInputChanged.listeners) {
                     await listener(inputValue, suggestFn);
                 }
             } else {
-                this.inputBox.classList.remove("omn-filled");
+                this.removeHint();
+                this.clearDropdown();
             }
-        });
+        };
+        this.inputBox.oninput = this.trigger;
+        this.inputBox.onfocus = this.trigger;
         this.inputBox.addEventListener("keydown", (event) => {
             if (event.key === 'ArrowUp' || event.key === 'ArrowDown' || event.key === "Enter") {
                 // Prevent the default behavior of arrow up and arrow down keys
                 event.preventDefault();
             }
         });
-
-        document.addEventListener('keyup', async (event) => {
-            console.log('keyup:', event);
+        document.addEventListener('click', (event) => {
+            if (!event.composedPath().includes(element)) {
+                // Click outside to clear dropdown
+                this.resetSearchKeyword();
+            }
+        });
+        document.addEventListener('keydown', async (event) => {
             switch (event.code) {
                 case 'Enter': {
                     let selected = document.querySelector('.omn-selected');
@@ -74,55 +82,94 @@ class Render {
                 case 'ArrowUp': {
                     let selected = document.querySelector('.omn-selected');
                     if (selected) {
+                        let newSelected = null;
                         if (selected.previousElementSibling) {
-                            selected.previousElementSibling.classList.add('omn-selected');
+                            newSelected = selected.previousElementSibling;
                         } else {
                             // Already selected the fist item, but a arrow-up key pressed,
                             // select the last item.
-                            let lastChild = document.querySelector('.omn-dropdown-item:last-child');
-                            if (lastChild) {
-                                lastChild.classList.add('omn-selected');
-                            }
+                            newSelected = document.querySelector('.omn-dropdown-item:last-child');
                         }
 
-                        selected.classList.remove('omn-selected');
+                        if (newSelected) {
+                            selected.classList.remove('omn-selected');
+                            newSelected.classList.add('omn-selected')
+                            this.inputBox.value = newSelected.getAttribute('data-value');
+                        }
                     }
                     break;
                 }
                 case 'ArrowDown': {
                     let selected = document.querySelector('.omn-selected');
                     if (selected) {
+                        let newSelected = null;
                         if (selected.nextElementSibling) {
-                            selected.nextElementSibling.classList.add('omn-selected');
+                            newSelected = selected.nextElementSibling;
                         } else {
                             // Already selected the last item, but a arrow-up key pressed,
                             // select the fist item.
-                            let firstChild = document.querySelector('.omn-dropdown-item:first-child');
-                            if (firstChild) {
-                                firstChild.classList.add('omn-selected');
-                            }
+                            newSelected = document.querySelector('.omn-dropdown-item:first-child');
                         }
-                        selected.classList.remove('omn-selected');
+
+                        if (newSelected) {
+                            selected.classList.remove('omn-selected');
+                            newSelected.classList.add('omn-selected')
+                            this.inputBox.value = newSelected.getAttribute('data-value');
+                        }
                     }
                     break;
                 }
                 case 'Escape': {
-                    this.clearDropdown();
-                    this.inputBox.classList.remove("omn-filled");
+                    this.resetSearchKeyword();
                     break;
                 }
             }
         });
     }
 
+    resetSearchKeyword() {
+        // Reset the input box value to the search keyword
+        let dropdown = document.querySelector('.omn-dropdown');
+        if (dropdown) {
+            let item = dropdown.querySelector(".omn-dropdown-item");
+            if (item) {
+                this.inputBox.value = item.getAttribute('data-value');
+            }
+        }
+
+        this.clearDropdown();
+    }
+
     clearDropdown() {
+        this.container.classList.remove("omn-filled");
+
         let dropdown = document.querySelector('.omn-dropdown');
         if (dropdown) {
             dropdown.remove();
         }
     }
 
+    setHint(hintText) {
+        this.removeHint();
+        let hintElement = document.createElement('div');
+        hintElement.classList.add('omn-hint');
+        hintElement.textContent = hintText;
+        this.container.insertAdjacentHTML('afterbegin', `
+        <div class="omn-hint">${hintText}<div class="omn-hint-gapline"></div></div>
+        `);
+    }
+
+    removeHint() {
+        let hint = document.querySelector('.omn-hint');
+        if (hint) {
+            hint.remove();
+        }
+    }
+
     suggest(suggestions) {
+        this.clearDropdown();
+        this.container.classList.add("omn-filled");
+
         let dropdown = document.createElement('div');
         dropdown.classList.add('omn-dropdown');
 
@@ -136,20 +183,23 @@ class Render {
             li.classList.add("omn-dropdown-item");
             li.style.position = "relative";
             li.setAttribute("data-content", content);
-            li.innerHTML = `<div class="omn-dropdown-indicator"></div>
-                            <div>
-                            <a href="${content}">
-                            ${this.icon ? `<img src=\"${this.icon}\"/>` : ""}
-                            ${parseOmniboxDescription(description)}
-                            </a></div>`;
             if (index === 0) {
                 // Always select the first item by default.
                 li.classList.add('omn-selected');
+                // Set the inputbox value as data-value, similar to chrome.omnibox API
+                li.setAttribute("data-value", this.inputBox.value);
+            } else {
+                li.setAttribute("data-value", content);
             }
+            li.innerHTML = `<div class="omn-dropdown-indicator"></div>
+                            <a href="${content}">
+                            ${this.icon ? `<img src=\"${this.icon}\"/>` : ""}
+                            ${parseOmniboxDescription(description)}
+                            </a>`;
             container.appendChild(li);
         }
         dropdown.appendChild(container);
-        this.inputBox.insertAdjacentElement('afterend', dropdown);
+        this.container.insertAdjacentElement('afterend', dropdown);
     }
 }
 
@@ -177,63 +227,11 @@ class OnInputEnteredListener {
     }
 }
 
-// Remove invalid characters from text.
-function sanitizeString(text, shouldTrim) {
-    // NOTE: This logic mirrors |AutocompleteMatch::SanitizeString()|.
-    // 0x2028 = line separator; 0x2029 = paragraph separator.
-    let removeChars = /(\r|\n|\t|\u2028|\u2029)/gm;
-    if (shouldTrim)
-        text = text.trimLeft();
-    return text.replace(removeChars, '');
-}
-
 function parseOmniboxDescription(input) {
-    let domParser = new DOMParser();
-
-    // The XML parser requires a single top-level element, but we want to
-    // support things like 'hello, <match>world</match>!'. So we wrap the
-    // provided text in generated root level element.
-    let root = domParser.parseFromString(
-        '<fragment>' + input + '</fragment>', 'text/xml');
-
-    // DOMParser has a terrible error reporting facility. Errors come out nested
-    // inside the returned document.
-    let error = root.querySelector('parsererror div');
-    if (error) {
-        throw new Error(error.textContent);
-    }
-
-    // Otherwise, it's valid, so build up the description result.
-    let description = '';
-
-    // Recursively walk the tree.
-    function walk(node) {
-        for (let i = 0, child; child = node.childNodes[i]; i++) {
-            // Append text nodes to our description.
-            if (child.nodeType === Node.TEXT_NODE) {
-                let shouldTrim = description.length === 0;
-                description += sanitizeString(child.nodeValue, shouldTrim);
-                continue;
-            }
-
-            // Process and descend into a subset of recognized tags.
-            if (child.nodeType === Node.ELEMENT_NODE &&
-                (child.nodeName === 'dim' || child.nodeName === 'match' ||
-                    child.nodeName === 'url')) {
-                description += `<span class="omn-${child.nodeName}">`;
-                walk(child);
-                description += "</span>";
-                continue;
-            }
-
-            // Descend into all other nodes, even if they are unrecognized, for
-            // forward compat.
-            walk(child);
-        }
-    };
-    walk(root);
-
-    return description;
+    return input.replaceAll("<match>", "<span class='omn-match'>")
+        .replaceAll("</match>", "</span>")
+        .replaceAll("<dim>", "<span class='omn-dim'>")
+        .replaceAll("</dim>", "</span>");
 }
 
 export default Render;

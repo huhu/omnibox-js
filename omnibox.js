@@ -1,3 +1,4 @@
+import Compat from "./compat.js";
 import Render from "./render.js";
 import QueryEvent from "./query-event.js";
 
@@ -5,17 +6,12 @@ const PAGE_TURNER = "-";
 const URL_PROTOCOLS = /^(https?|file|chrome-extension|moz-extension):\/\//i;
 
 export default class Omnibox {
-    constructor({ el, icon, defaultSuggestion, maxSuggestionSize = 8 }) {
-        if (el) {
-            this.render = new Render({ el, icon });
-        } else if (chrome && chrome.omnibox) {
-            this.render = chrome.omnibox;
-        } else {
-            throw new Error("No element provided");
-        }
-
+    constructor({ render, defaultSuggestion, maxSuggestionSize = 8, hint = false }) {
+        this.render = render;
+        this.extensionMode = !(render instanceof Render);
+        this.browserType = Compat.browserType();
         this.maxSuggestionSize = maxSuggestionSize;
-        this.defaultSuggestionDescription = defaultSuggestion;
+        this.defaultSuggestionDescription = this.escapeDescription(defaultSuggestion);
         this.defaultSuggestionContent = null;
         this.queryEvents = [];
         // Cache the last query and result to speed up the page down.
@@ -23,6 +19,46 @@ export default class Omnibox {
         this.cachedResult = null;
         // A set of query which should not be cached.
         this.noCacheQueries = new Set();
+        if (!this.extensionMode) {
+            this.hintEnabled = hint;
+        }
+    }
+
+    static extension({ defaultSuggestion, maxSuggestionSize = 8 }) {
+        return new Omnibox({
+            render: chrome.omnibox,
+            defaultSuggestion,
+            maxSuggestionSize,
+        });
+    }
+
+    static webpage({ el, icon, placeholder, defaultSuggestion, maxSuggestionSize = 8, hint = true }) {
+        return new Omnibox({
+            render: new Render({ el, icon, placeholder }),
+            defaultSuggestion,
+            maxSuggestionSize,
+            hint,
+        });
+    }
+
+    setDefaultSuggestion(description, content) {
+        if (this.extensionMode) {
+            chrome.omnibox.setDefaultSuggestion({ description });
+        }
+
+        if (content) {
+            this.defaultSuggestionContent = content;
+        }
+    }
+
+
+    escapeDescription(description) {
+        if (this.extensionMode && this.browserType === 'firefox') {
+            // Firefox doesn't support tags in search suggestion.
+            return Compat.eliminateTags(description);
+        } else {
+            return description
+        }
     }
 
     parse(input) {
@@ -70,7 +106,9 @@ export default class Omnibox {
         afterNavigated
     }) {
         this.globalEvent = new QueryEvent({ onSearch, onFormat, onAppend });
-        // this.setDefaultSuggestion(this.defaultSuggestionDescription);
+        if (this.extensionMode) {
+            this.setDefaultSuggestion(this.defaultSuggestionDescription);
+        }
         let results;
         let appendixes = [];
         let currentInput;
@@ -81,7 +119,7 @@ export default class Omnibox {
             // this could prevent content null bug in onInputEntered().
             this.defaultSuggestionContent = input;
             if (!input) {
-                // this.setDefaultSuggestion(this.defaultSuggestionDescription);
+                this.setDefaultSuggestion(this.defaultSuggestionDescription);
                 return;
             }
 
@@ -91,7 +129,12 @@ export default class Omnibox {
             if (this.noCacheQueries.has(query) || this.cachedQuery !== query) {
                 let searchResult = await this.performSearch(query);
                 results = searchResult.result;
-                appendixes = searchResult.appendixes;
+                appendixes = searchResult.appendixes.map(({ content, description }) => {
+                    return {
+                        content,
+                        description: this.escapeDescription(description),
+                    }
+                });
 
                 this.cachedQuery = query;
                 this.cachedResult = results;
@@ -105,11 +148,11 @@ export default class Omnibox {
             // Slice the page data then format this data.
             results = results.slice(this.maxSuggestionSize * (page - 1), this.maxSuggestionSize * page);
             let pageSize = results.length;
-            results = results
-                .map(({ event, ...item }, index) => {
+            results = await Promise.all(results
+                .map(async ({ event, ...item }, index) => {
                     if (event) {
                         // onAppend result has no event.
-                        item = event.format(item, index);
+                        item = await event.format(item, index);
                     }
                     if (uniqueUrls.has(item.content)) {
                         item.content += `?${uniqueUrls.size + 1}`;
@@ -117,22 +160,21 @@ export default class Omnibox {
                     if (index == 0) {
                         // Add pagination tip in the first item.
                         item.description += paginationTip;
-                    }
-                    if (totalPage > 1 && pageSize > 2 && index === pageSize - 1) {
+                    } else if (totalPage > 1 && pageSize > 2 && index === pageSize - 1) {
                         // Add pagination tip in the last item.
                         item.description += paginationTip;
                     }
+                    // escape the description
+                    item.description = this.escapeDescription(item.description);
                     uniqueUrls.add(item.content);
                     return item;
-                });
-            // if (results.length > 0) {
-            // let { content, description } = results.shift();
-            // // Store the default description temporary.
-            // defaultDescription = description;
-            // description += paginationTip;
-            // // this.setDefaultSuggestion(description, content);
-            // results.unshift({ content, description });
-            // }
+                }));
+            if (results.length > 0 && this.extensionMode) {
+                let { content, description } = results.shift();
+                // Store the default description temporary.
+                defaultDescription = description;
+                this.setDefaultSuggestion(description, content);
+            }
             results.push(...appendixes);
             suggestFn(results);
         });
@@ -179,7 +221,11 @@ export default class Omnibox {
                 await onEmptyNavigate(content, disposition);
             }
 
-            // this.setDefaultSuggestion(this.defaultSuggestionDescription);
+            if (this.extensionMode) {
+                this.setDefaultSuggestion(this.defaultSuggestionDescription);
+            } else {
+                this.render.resetSearchKeyword();
+            }
         });
     }
 
@@ -199,33 +245,41 @@ export default class Omnibox {
             });
 
         if (matchedEvent) {
+            if (this.hintEnabled && matchedEvent.name) {
+                this.render.setHint(matchedEvent.name);
+            }
             result = await matchedEvent.performSearch(query);
             if (matchedEvent.onAppend) {
-                appendixes.push(...matchedEvent.onAppend(query));
+                appendixes.push(...await matchedEvent.onAppend(query));
             }
         } else {
+            if (this.hintEnabled) {
+                this.render.removeHint();
+            }
             result = await this.globalEvent.performSearch(query);
-            let defaultSearchEvents = this.queryEvents
-                .filter(event => {
-                    // The isDefaultSearch hook method is preferred over defaultSearch property.
-                    if (event.isDefaultSearch) {
-                        return event.isDefaultSearch();
-                    } else {
-                        return event.defaultSearch;
+            let defaultSearchEvents = [];
+            for (let event of this.queryEvents) {
+                // The isDefaultSearch hook method is preferred over defaultSearch property.
+                if (event.isDefaultSearch) {
+                    if (await event.isDefaultSearch()) {
+                        defaultSearchEvents.push(event);
                     }
-                })
-                // The smaller, the higher order
-                .sort((a, b) => a.searchPriority - b.searchPriority);
+                } else if (event.defaultSearch) {
+                    defaultSearchEvents.push(event);
+                }
+            }
+            defaultSearchEvents.sort((a, b) => a.searchPriority - b.searchPriority);
+
             let defaultSearchAppendixes = [];
             for (let event of defaultSearchEvents) {
                 result.push(...await event.performSearch(query));
                 if (event.onAppend) {
-                    defaultSearchAppendixes.push(...event.onAppend(query));
+                    defaultSearchAppendixes.push(...await event.onAppend(query));
                 }
             }
 
             if (this.globalEvent.onAppend) {
-                appendixes.push(...this.globalEvent.onAppend(query));
+                appendixes.push(...await this.globalEvent.onAppend(query));
             }
             appendixes.push(...defaultSearchAppendixes);
         }
@@ -245,6 +299,7 @@ export default class Omnibox {
             prefix,
             ...event,
         }));
+        this.noCacheQueries.add(prefix);
     }
 
     addRegexQueryEvent(regex, event) {
@@ -265,7 +320,7 @@ export default class Omnibox {
     static navigateToUrl(url, disposition) {
         url = url.replace(/\?\d+$/ig, "");
         if (disposition === "currentTab") {
-            if (chrome && chrome.tabs) {
+            if (Compat.isRunningInWebExtension()) {
                 chrome.tabs.query({ active: true }, tab => {
                     chrome.tabs.update(tab.id, { url });
                 });
@@ -274,7 +329,7 @@ export default class Omnibox {
             }
         } else {
             // newForegroundTab, newBackgroundTab
-            if (chrome && chrome.tabs) {
+            if (Compat.isRunningInWebExtension()) {
                 chrome.tabs.create({ url });
             } else {
                 window.open(url);

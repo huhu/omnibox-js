@@ -6,18 +6,14 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Omnibox.js</title>
-    <link rel="stylesheet" href="../src/omnibox.css">
+    <link rel="stylesheet" href="../omnibox.css">
 </head>
 
 <body>
     <div id="input" style="width: 800px; margin: 50px auto;"></div>
 </body>
-<script src="compat.js"></script>
-<script src="algorithm.js"></script>
-<script src="crates-index.js"></script>
-<script src="crate-searcher.js"></script>
 <script type="module">
-    import { Omnibox, QueryEvent, Render } from "../src/index.js";
+    import { Omnibox, QueryEvent, Render } from "../index.js";
 
     let suggestions = {
         "https://github.com": "Github",
@@ -30,44 +26,24 @@
     suggestions = Object.entries(suggestions).map(([key, value]) => {
         return { content: key, description: value }
     });
-    const c = new Compat();
-    const crateSearcher = new CrateSearch(window.mapping, window.crateIndex);
-    const omnibox = new Omnibox({
+    const omnibox = Omnibox.webpage({
         el: "#input",
         icon: "https://rust.extension.sh/logo.png",
-        defaultSuggestion: "Omnibox.js"
+        placeholder: "Start search with omnibox.js",
+        defaultSuggestion: "Omnibox.js",
     });
     omnibox.bootstrap({
         onSearch: (query) => {
             return suggestions.filter(({ description }) => description.toLowerCase().indexOf(query.toLowerCase()) > -1);
+        },
+        onFormat: (index, doc) => {
+            return { description: `<match>${doc.description}</match> - <dim>${doc.content}</dim>`, content: doc.content };
         },
         onAppend: (query) => {
             return [{
                 content: `https://google.com/search?q=${query}`,
                 description: `Search <match>${query}</match> on google`,
             }]
-        }
-    });
-
-    omnibox.addPrefixQueryEvent("!", {
-        isDefaultSearch: () => {
-            return true;
-        },
-        onSearch: (query) => {
-            return crateSearcher.search(query);
-        },
-        onFormat: (index, crate) => {
-            return {
-                content: `https://docs.rs/${crate.id}`,
-                description: `${c.capitalize("docs.rs")}: ${c.match(crate.id)} v${crate.version} - ${c.dim(c.escape(c.eliminateTags(crate.description)))}`,
-            };
-        },
-        onAppend: (query) => {
-            let keyword = query.replace(/[!\s]/g, "");
-            return [{
-                content: "https://docs.rs/releases/search?query=" + encodeURIComponent(keyword),
-                description: "Search Rust crates for " + c.match(keyword) + " on https://docs.rs",
-            }];
         },
     });
 </script>
