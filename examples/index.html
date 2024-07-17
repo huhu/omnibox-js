@@ -46,6 +46,12 @@
             }]
         },
     });
+    omnibox.addPrefixQueryEvent(":", {
+        name: "Command",
+        onSearch: (query) => {
+            return suggestions.filter(({ description }) => description.toLowerCase().indexOf(query.toLowerCase()) > -1);
+        },
+    })
 </script>
 
 </html>

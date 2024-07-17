@@ -13,7 +13,12 @@
   font-size: 16px;
   align-items: center;
 }
-
+.omn-search-icon {
+  height: 22px;
+  line-height: 22px;
+  width: 22px;
+  margin-right: 5px;
+}
 .omn-input {
   width: 100%;
   border: transparent;
