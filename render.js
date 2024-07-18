@@ -53,6 +53,7 @@ export class Render {
             clearButton.onclick = () => {
                 this.inputBox.value = "";
                 this.clearDropdown();
+                this.removeHint();
                 clearButton.style.display = "none";
             };
         }
