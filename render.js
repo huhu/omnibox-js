@@ -3,30 +3,36 @@ const DISPOSITION_FOREGROUND_TAB = 'newForegroundTab'; // alt + enter
 const DISPOSITION_BACKROUND_TAB = 'newBackgroundTab'; // meta + enter
 
 class Render {
-    constructor({ el, icon, placeholder }) {
-        let element = document.querySelector(el);
+    constructor({ el, element, icon, placeholder }) {
+        if (!el && !element) {
+            throw new Error("`el` or `element` is required");
+        }
+
         if (!element) {
-            throw new Error(`not element found: ${el}`);
-        }
+            element = document.querySelector(el);
+            if (!element) {
+                throw new Error(`not element found: ${el}`);
+            }
 
-        if (element.tagName !== "DIV") {
-            throw new Error("The `el` can only be `div` tag");
-        }
+            if (element.tagName !== "DIV") {
+                throw new Error("The `el` can only be `div` tag");
+            }
 
-        if (element.childNodes.length > 0) {
-            throw new Error("The `el` element should have no child nodes");
+            if (element.childNodes.length > 0) {
+                throw new Error("The `el` element should have no child nodes");
+            }
+            element.style.position = "relative";
+            element.innerHTML = `<div class="omn-container">
+                <textarea class="omn-input"
+                autocapitalize="off" autocomplete="off" autocorrect="off" 
+                maxlength="2048" role="combobox" rows="1" style="resize:none"
+                spellcheck="false"></textarea>
+                <div class="omn-search-icon">
+                <svg focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path></svg>
+                </div>
+                </div>
+            `;
         }
-        element.style.position = "relative";
-        element.innerHTML = `<div class="omn-container">
-            <textarea class="omn-input"
-            autocapitalize="off" autocomplete="off" autocorrect="off" 
-            maxlength="2048" role="combobox" rows="1" style="resize:none"
-            spellcheck="false"></textarea>
-            <div class="omn-search-icon">
-            <svg focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path></svg>
-            </div>
-            </div>
-        `;
         this.container = document.querySelector(".omn-container");
         this.inputBox = element.querySelector("textarea");
         if (placeholder) {

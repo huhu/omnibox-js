@@ -32,9 +32,9 @@ export default class Omnibox {
         });
     }
 
-    static webpage({ el, icon, placeholder, defaultSuggestion, maxSuggestionSize = 8, hint = true }) {
+    static webpage({ element, el, icon, placeholder, defaultSuggestion, maxSuggestionSize = 8, hint = true }) {
         return new Omnibox({
-            render: new Render({ el, icon, placeholder }),
+            render: new Render({ element, el, icon, placeholder }),
             defaultSuggestion,
             maxSuggestionSize,
             hint,
