@@ -1,6 +1,6 @@
 {
   "name": "omnibox-js",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Turn your div into a chrome omnibox",
   "main": "index.js",
   "type": "module",
