@@ -1,5 +1,5 @@
 import Compat from "./compat.js";
-import Render from "./render.js";
+import { Render } from "./render.js";
 import QueryEvent from "./query-event.js";
 
 const PAGE_TURNER = "-";

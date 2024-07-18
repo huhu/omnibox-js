@@ -2,7 +2,21 @@ const DISPOSITION_CURRENT_TAB = 'currentTab'; // enter (default)
 const DISPOSITION_FOREGROUND_TAB = 'newForegroundTab'; // alt + enter
 const DISPOSITION_BACKROUND_TAB = 'newBackgroundTab'; // meta + enter
 
-class Render {
+export const OMNIBOX_HTML = `
+<div class="omn-container">
+    <textarea class="omn-input"
+    autocapitalize="off" autocomplete="off" autocorrect="off" 
+    maxlength="2048" role="combobox" rows="1" style="resize:none"
+    spellcheck="false"></textarea>
+    <div class="omn-clear">
+    <svg focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path></svg>
+    </div>
+    <div class="omn-search-icon">
+    <svg focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path></svg>
+    </div>
+</div>`;
+
+export class Render {
     constructor({ el, element, icon, placeholder }) {
         if (!el && !element) {
             throw new Error("`el` or `element` is required");
@@ -22,19 +36,7 @@ class Render {
                 throw new Error("The `el` element should have no child elements");
             }
             element.style.position = "relative";
-            element.innerHTML = `<div class="omn-container">
-                <textarea class="omn-input"
-                autocapitalize="off" autocomplete="off" autocorrect="off" 
-                maxlength="2048" role="combobox" rows="1" style="resize:none"
-                spellcheck="false"></textarea>
-                <div class="omn-clear">
-                <svg focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path></svg>
-                </div>
-                <div class="omn-search-icon">
-                <svg focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path></svg>
-                </div>
-                </div>
-            `;
+            element.innerHTML = OMNIBOX_HTML;
         }
         this.container = document.querySelector(".omn-container");
         this.inputBox = element.querySelector("textarea");
@@ -261,5 +263,3 @@ function parseOmniboxDescription(input) {
         .replaceAll("<dim>", "<span class='omn-dim'>")
         .replaceAll("</dim>", "</span>");
 }
-
-export default Render;
