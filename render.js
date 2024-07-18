@@ -18,8 +18,8 @@ class Render {
                 throw new Error("The `el` can only be `div` tag");
             }
 
-            if (element.childNodes.length > 0) {
-                throw new Error("The `el` element should have no child nodes");
+            if (element.children.length > 0) {
+                throw new Error("The `el` element should have no child elements");
             }
             element.style.position = "relative";
             element.innerHTML = `<div class="omn-container">
