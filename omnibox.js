@@ -110,7 +110,6 @@ export default class Omnibox {
             this.setDefaultSuggestion(this.defaultSuggestionDescription);
         }
         let results;
-        let appendixes = [];
         let currentInput;
         let defaultDescription;
 
@@ -125,57 +124,7 @@ export default class Omnibox {
 
             currentInput = input;
             let { query, page } = this.parse(input);
-            // Always perform search if query is a noCachedQuery, then check whether equals to cachedQuery
-            if (this.noCacheQueries.has(query) || this.cachedQuery !== query) {
-                let searchResult = await this.performSearch(query);
-                results = searchResult.result;
-                appendixes = searchResult.appendixes.map(({ content, description }) => {
-                    return {
-                        content,
-                        description: this.escapeDescription(description),
-                    }
-                });
-
-                this.cachedQuery = query;
-                this.cachedResult = results;
-            } else {
-                results = this.cachedResult;
-            }
-
-            let totalPage = Math.ceil(results.length / this.maxSuggestionSize);
-            const paginationTip = ` | Page [${page}/${totalPage}], append '${PAGE_TURNER}' to page down`;
-            let uniqueUrls = new Set();
-            // Slice the page data then format this data.
-            results = results.slice(this.maxSuggestionSize * (page - 1), this.maxSuggestionSize * page);
-            let pageSize = results.length;
-            results = await Promise.all(results
-                .map(async ({ event, ...item }, index) => {
-                    if (event) {
-                        // onAppend result has no event.
-                        item = await event.format(item, index);
-                    }
-                    if (uniqueUrls.has(item.content)) {
-                        item.content += `?${uniqueUrls.size + 1}`;
-                    }
-                    if (index == 0) {
-                        // Add pagination tip in the first item.
-                        item.description += paginationTip;
-                    } else if (totalPage > 1 && pageSize > 2 && index === pageSize - 1) {
-                        // Add pagination tip in the last item.
-                        item.description += paginationTip;
-                    }
-                    // escape the description
-                    item.description = this.escapeDescription(item.description);
-                    uniqueUrls.add(item.content);
-                    return item;
-                }));
-            if (results.length > 0 && this.extensionMode) {
-                let { content, description } = results.shift();
-                // Store the default description temporary.
-                defaultDescription = description;
-                this.setDefaultSuggestion(description, content);
-            }
-            results.push(...appendixes);
+            results = await this.search(query, page);
             suggestFn(results);
         });
 
@@ -227,6 +176,64 @@ export default class Omnibox {
                 this.render.resetSearchKeyword();
             }
         });
+    }
+
+    async search(query, page) {
+        let results;
+        let appendixes = [];
+
+        // Always perform search if query is a noCachedQuery, then check whether equals to cachedQuery
+        if (this.noCacheQueries.has(query) || this.cachedQuery !== query) {
+            let searchResult = await this.performSearch(query);
+            results = searchResult.result;
+            appendixes = searchResult.appendixes.map(({ content, description }) => {
+                return {
+                    content,
+                    description: this.escapeDescription(description),
+                }
+            });
+
+            this.cachedQuery = query;
+            this.cachedResult = results;
+        } else {
+            results = this.cachedResult;
+        }
+
+        let totalPage = Math.ceil(results.length / this.maxSuggestionSize);
+        const paginationTip = ` | Page [${page}/${totalPage}], append '${PAGE_TURNER}' to page down`;
+        let uniqueUrls = new Set();
+        // Slice the page data then format this data.
+        results = results.slice(this.maxSuggestionSize * (page - 1), this.maxSuggestionSize * page);
+        let pageSize = results.length;
+        results = await Promise.all(results
+            .map(async ({ event, ...item }, index) => {
+                if (event) {
+                    // onAppend result has no event.
+                    item = await event.format(item, index);
+                }
+                if (uniqueUrls.has(item.content)) {
+                    item.content += `?${uniqueUrls.size + 1}`;
+                }
+                if (index == 0) {
+                    // Add pagination tip in the first item.
+                    item.description += paginationTip;
+                } else if (totalPage > 1 && pageSize > 2 && index === pageSize - 1) {
+                    // Add pagination tip in the last item.
+                    item.description += paginationTip;
+                }
+                // escape the description
+                item.description = this.escapeDescription(item.description);
+                uniqueUrls.add(item.content);
+                return item;
+            }));
+        if (results.length > 0 && this.extensionMode) {
+            let { content, description } = results.shift();
+            // Store the default description temporary.
+            defaultDescription = description;
+            this.setDefaultSuggestion(description, content);
+        }
+        results.push(...appendixes);
+        return results;
     }
 
     async performSearch(query) {
