@@ -1,3 +1,5 @@
+import { parseInput } from "./omnibox.js";
+
 const DISPOSITION_CURRENT_TAB = 'currentTab'; // enter (default)
 const DISPOSITION_FOREGROUND_TAB = 'newForegroundTab'; // alt + enter
 const DISPOSITION_BACKROUND_TAB = 'newBackgroundTab'; // meta + enter
@@ -158,16 +160,20 @@ export class Render {
         });
     }
 
-    resetSearchKeyword() {
-        // Reset the input box value to the search keyword
+    getSearchKeyword() {
         let dropdown = document.querySelector('.omn-dropdown');
         if (dropdown) {
             let item = dropdown.querySelector(".omn-dropdown-item");
             if (item) {
-                this.inputBox.value = item.getAttribute('data-value');
+                return item.getAttribute('data-value');
             }
         }
+        return "";
+    }
 
+    resetSearchKeyword() {
+        // Reset the input box value to the search keyword
+        this.inputBox.value = this.getSearchKeyword();
         this.clearDropdown();
     }
 
@@ -195,6 +201,32 @@ export class Render {
         if (hint) {
             hint.remove();
         }
+    }
+
+    pageDown() {
+        let searchKeyword = this.getSearchKeyword();
+        if (searchKeyword) {
+            let { query, page } = parseInput(searchKeyword);
+            this.inputBox.value = `${query} ${'-'.repeat(page++)}`;
+        } else {
+            this.inputBox.value = '-';
+        }
+        this.inputBox.dispatchEvent(new Event("input"));
+    }
+
+    pageUp() {
+        let searchKeyword = this.getSearchKeyword();
+        if (searchKeyword) {
+            let { query, page } = parseInput(searchKeyword);
+            if (page > 1) {
+                this.inputBox.value = `${query} ${'-'.repeat(page--)}`;
+            } else {
+                this.inputBox.value = query;
+            }
+        } else {
+            this.inputBox.value = '';
+        }
+        this.inputBox.dispatchEvent(new Event("input"));
     }
 
     suggest(suggestions) {
