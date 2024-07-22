@@ -205,6 +205,7 @@ export class Render {
                 page += 1;
             }
             this.searchKeyword = `${query} ${PAGE_TURNER.repeat(page)}`;
+            this.inputBox.value = this.searchKeyword;
             await this.render();
         }
     }
@@ -217,6 +218,7 @@ export class Render {
             }
             if (page > 0) {
                 this.searchKeyword = `${query} ${PAGE_TURNER.repeat(Math.max(0, page - 1))}`;
+                this.inputBox.value = this.searchKeyword;
             }
             await this.render();
         }
@@ -228,7 +230,6 @@ export class Render {
      * @param {curr, total} pagination 
      */
     suggest(suggestions, pagination) {
-        this.clearDropdown();
         this.container.classList.add("omn-filled");
 
         let dropdown = document.createElement('div');
@@ -266,6 +267,8 @@ export class Render {
                 dropdown.appendChild(footer);
             }
         }
+
+        this.clearDropdown();
         this.container.insertAdjacentElement('afterend', dropdown);
     }
 }
