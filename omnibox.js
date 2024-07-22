@@ -124,8 +124,9 @@ export default class Omnibox {
 
             currentInput = input;
             let { query, page } = parseInput(input);
-            let { results, totalPage } = await this.search(query, page);
-            suggestFn(results, { curr: page, total: totalPage });
+            let searchResult = await this.search(query, page);
+            results = searchResult.results;
+            suggestFn(results, { curr: page, total: searchResult.totalPage });
         });
 
         this.render.onInputEntered.addListener(async (content, disposition) => {

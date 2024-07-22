@@ -42,6 +42,7 @@ export class Render {
         }
         this.container = document.querySelector(".omn-container");
         this.inputBox = element.querySelector("textarea");
+        this.searchKeyword = "";
         if (placeholder) {
             this.inputBox.setAttribute("placeholder", placeholder);
         }
@@ -63,10 +64,10 @@ export class Render {
 
         let suggestFn = this.suggest.bind(this);
         this.trigger = async (event) => {
-            let inputValue = event.target.value;
-            if (inputValue) {
+            this.searchKeyword = event.target.value;
+            if (this.searchKeyword) {
                 for (const listener of this.onInputChanged.listeners) {
-                    await listener(inputValue, suggestFn);
+                    await listener(this.searchKeyword, suggestFn);
                 }
                 if (clearButton) {
                     clearButton.style.display = "block";
@@ -161,20 +162,9 @@ export class Render {
         });
     }
 
-    getSearchKeyword() {
-        let dropdown = document.querySelector('.omn-dropdown');
-        if (dropdown) {
-            let item = dropdown.querySelector(".omn-dropdown-item");
-            if (item) {
-                return item.getAttribute('data-value');
-            }
-        }
-        return "";
-    }
-
     resetSearchKeyword() {
         // Reset the input box value to the search keyword
-        this.inputBox.value = this.getSearchKeyword();
+        this.inputBox.value = this.searchKeyword;
         this.clearDropdown();
     }
 
@@ -205,9 +195,8 @@ export class Render {
     }
 
     pageDown() {
-        let searchKeyword = this.getSearchKeyword();
-        if (searchKeyword) {
-            let { query, page } = parseInput(searchKeyword);
+        if (this.searchKeyword) {
+            let { query, page } = parseInput(this.searchKeyword);
             this.inputBox.value = `${query} ${PAGE_TURNER.repeat(page)}`;
         } else {
             this.inputBox.value = '-';
@@ -216,12 +205,11 @@ export class Render {
     }
 
     pageUp() {
-        let searchKeyword = this.getSearchKeyword();
-        if (searchKeyword) {
-            let { query, page } = parseInput(searchKeyword);
+        if (this.searchKeyword) {
+            let { query, page } = parseInput(this.searchKeyword);
             page -= 1;
             if (page > 1) {
-                this.inputBox.value = `${query} ${PAGE_TURNER.repeat(page - 1)}`;
+                this.inputBox.value = `${query} ${PAGE_TURNER.repeat(Math.max(0, page - 1))}`;
             } else {
                 this.inputBox.value = query;
             }
@@ -271,7 +259,9 @@ export class Render {
         dropdown.appendChild(items);
         if (pagination && this.onFooter) {
             let footer = this.onFooter(this, pagination);
-            dropdown.appendChild(footer);
+            if (footer) {
+                dropdown.appendChild(footer);
+            }
         }
         this.container.insertAdjacentElement('afterend', dropdown);
     }
