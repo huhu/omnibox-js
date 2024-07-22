@@ -52,33 +52,19 @@ export class Render {
         this.disposition = DISPOSITION_CURRENT_TAB;
         this.onFooter = onFooter;
 
-        const clearButton = document.querySelector(".omn-clear");
-        if (clearButton) {
-            clearButton.onclick = () => {
+        this.clearButton = document.querySelector(".omn-clear");
+        if (this.clearButton) {
+            this.clearButton.onclick = () => {
                 this.inputBox.value = "";
                 this.clearDropdown();
                 this.removeHint();
-                clearButton.style.display = "none";
+                this.clearButton.style.display = "none";
             };
         }
 
-        let suggestFn = this.suggest.bind(this);
         this.trigger = async (event) => {
             this.searchKeyword = event.target.value;
-            if (this.searchKeyword) {
-                for (const listener of this.onInputChanged.listeners) {
-                    await listener(this.searchKeyword, suggestFn);
-                }
-                if (clearButton) {
-                    clearButton.style.display = "block";
-                }
-            } else {
-                this.removeHint();
-                this.clearDropdown();
-                if (clearButton) {
-                    clearButton.style.display = "none";
-                }
-            }
+            await this.render();
         };
         this.inputBox.oninput = this.trigger;
         this.inputBox.onfocus = this.trigger;
@@ -162,6 +148,24 @@ export class Render {
         });
     }
 
+    async render() {
+        if (this.searchKeyword) {
+            let suggestFn = this.suggest.bind(this);
+            for (const listener of this.onInputChanged.listeners) {
+                await listener(this.searchKeyword, suggestFn);
+            }
+            if (this.clearButton) {
+                this.clearButton.style.display = "block";
+            }
+        } else {
+            this.removeHint();
+            this.clearDropdown();
+            if (this.clearButton) {
+                this.clearButton.style.display = "none";
+            }
+        }
+    }
+
     resetSearchKeyword() {
         // Reset the input box value to the search keyword
         this.inputBox.value = this.searchKeyword;
@@ -194,27 +198,27 @@ export class Render {
         }
     }
 
-    pageDown() {
+    async pageDown() {
         if (this.searchKeyword) {
             let { query, page } = parseInput(this.searchKeyword);
             if (!query) {
                 page += 1;
             }
-            this.inputBox.value = `${query} ${PAGE_TURNER.repeat(page)}`;
-            this.inputBox.dispatchEvent(new Event("input"));
+            this.searchKeyword = `${query} ${PAGE_TURNER.repeat(page)}`;
+            await this.render();
         }
     }
 
-    pageUp() {
+    async pageUp() {
         if (this.searchKeyword) {
             let { query, page } = parseInput(this.searchKeyword);
             if (query) {
                 page -= 1;
             }
             if (page > 0) {
-                this.inputBox.value = `${query} ${PAGE_TURNER.repeat(Math.max(0, page - 1))}`;
+                this.searchKeyword = `${query} ${PAGE_TURNER.repeat(Math.max(0, page - 1))}`;
             }
-            this.inputBox.dispatchEvent(new Event("input"));
+            await this.render();
         }
     }
 
