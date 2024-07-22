@@ -2,8 +2,8 @@ import Compat from "./compat.js";
 import { Render } from "./render.js";
 import QueryEvent from "./query-event.js";
 
-const PAGE_TURNER = "-";
 const URL_PROTOCOLS = /^(https?|file|chrome-extension|moz-extension):\/\//i;
+export const PAGE_TURNER = "-";
 
 export function parseInput(input) {
     let parsePage = (arg) => {
@@ -68,9 +68,9 @@ export default class Omnibox {
         });
     }
 
-    static webpage({ element, el, icon, placeholder, defaultSuggestion, maxSuggestionSize = 8, hint = true }) {
+    static webpage({ element, el, icon, placeholder, defaultSuggestion, onFooter, maxSuggestionSize = 8, hint = true }) {
         return new Omnibox({
-            render: new Render({ element, el, icon, placeholder }),
+            render: new Render({ element, el, icon, placeholder, onFooter }),
             defaultSuggestion,
             maxSuggestionSize,
             hint,
@@ -124,8 +124,8 @@ export default class Omnibox {
 
             currentInput = input;
             let { query, page } = parseInput(input);
-            results = await this.search(query, page);
-            suggestFn(results);
+            let { results, totalPage } = await this.search(query, page);
+            suggestFn(results, { curr: page, total: totalPage });
         });
 
         this.render.onInputEntered.addListener(async (content, disposition) => {
@@ -233,7 +233,7 @@ export default class Omnibox {
             this.setDefaultSuggestion(description, content);
         }
         results.push(...appendixes);
-        return results;
+        return { results, totalPage };
     }
 
     async performSearch(query) {

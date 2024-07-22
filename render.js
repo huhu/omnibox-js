@@ -1,4 +1,4 @@
-import { parseInput } from "./omnibox.js";
+import { parseInput, PAGE_TURNER } from "./omnibox.js";
 
 const DISPOSITION_CURRENT_TAB = 'currentTab'; // enter (default)
 const DISPOSITION_FOREGROUND_TAB = 'newForegroundTab'; // alt + enter
@@ -19,7 +19,7 @@ export const OMNIBOX_HTML = `
 </div>`;
 
 export class Render {
-    constructor({ el, element, icon, placeholder }) {
+    constructor({ el, element, icon, placeholder, onFooter }) {
         if (!el && !element) {
             throw new Error("`el` or `element` is required");
         }
@@ -49,6 +49,7 @@ export class Render {
         this.onInputChanged = new OnInputChangedListener();
         this.onInputEntered = new OnInputEnteredListener();
         this.disposition = DISPOSITION_CURRENT_TAB;
+        this.onFooter = onFooter;
 
         const clearButton = document.querySelector(".omn-clear");
         if (clearButton) {
@@ -207,7 +208,7 @@ export class Render {
         let searchKeyword = this.getSearchKeyword();
         if (searchKeyword) {
             let { query, page } = parseInput(searchKeyword);
-            this.inputBox.value = `${query} ${'-'.repeat(page++)}`;
+            this.inputBox.value = `${query} ${PAGE_TURNER.repeat(page)}`;
         } else {
             this.inputBox.value = '-';
         }
@@ -218,8 +219,9 @@ export class Render {
         let searchKeyword = this.getSearchKeyword();
         if (searchKeyword) {
             let { query, page } = parseInput(searchKeyword);
+            page -= 1;
             if (page > 1) {
-                this.inputBox.value = `${query} ${'-'.repeat(page--)}`;
+                this.inputBox.value = `${query} ${PAGE_TURNER.repeat(page - 1)}`;
             } else {
                 this.inputBox.value = query;
             }
@@ -229,7 +231,12 @@ export class Render {
         this.inputBox.dispatchEvent(new Event("input"));
     }
 
-    suggest(suggestions) {
+    /**
+     * 
+     * @param {Array[{content, description}]} suggestions 
+     * @param {curr, total} pagination 
+     */
+    suggest(suggestions, pagination) {
         this.clearDropdown();
         this.container.classList.add("omn-filled");
 
@@ -240,7 +247,7 @@ export class Render {
         gapline.classList.add("omn-gapline");
         dropdown.appendChild(gapline);
 
-        let container = document.createElement("div");
+        let items = document.createElement("div");
         for (let [index, { content, description }] of suggestions.entries()) {
             let li = document.createElement("div");
             li.classList.add("omn-dropdown-item");
@@ -259,9 +266,13 @@ export class Render {
                             ${this.icon ? `<img src=\"${this.icon}\"/>` : ""}
                             ${parseOmniboxDescription(description)}
                             </a>`;
-            container.appendChild(li);
+            items.appendChild(li);
         }
-        dropdown.appendChild(container);
+        dropdown.appendChild(items);
+        if (pagination && this.onFooter) {
+            let footer = this.onFooter(this, pagination);
+            dropdown.appendChild(footer);
+        }
         this.container.insertAdjacentElement('afterend', dropdown);
     }
 }

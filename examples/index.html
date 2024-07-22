@@ -34,6 +34,14 @@
         "https://netflix.com": "Netflix",
         "https://youtube.com": "YouTube",
         "https://twitter.com": "Twitter",
+        "https://yahoo.com": "Yahoo",
+        "https://facebook.com": "Facebook",
+        "https://amazon.com": "Amazon",
+        "https://wikipedia.com": "Wikipedia",
+        "https://spotify.com": "Spotify",
+        "https://openai.com": "OpenAI",
+        "https://stripe.com": "Stripe",
+        "https://instagram.com": "Instagram",
     };
     suggestions = Object.entries(suggestions).map(([key, value]) => {
         return { content: key, description: value }
@@ -44,6 +52,23 @@
         icon: "https://rust.extension.sh/logo.png",
         placeholder: "Start search with omnibox.js",
         defaultSuggestion: "Omnibox.js",
+        maxSuggestionSize: 3,
+        onFooter: (render, pagination) => {
+            let footer = document.createElement("div"); 
+            footer.innerHTML = `
+            <div style="display: flex;padding: 8px 10px; background-color: #abcdef">
+                <div>${pagination.curr}/${pagination.total}</div>
+                <div class="previous" style="padding: 0 12px;">Previous</div>
+                <div class="next">Next</div>
+            `;
+            footer.querySelector(".previous").onclick = () => {
+                render.pageUp();
+            };
+            footer.querySelector(".next").onclick = () => {
+                render.pageDown();
+            };
+            return footer;
+        }
     });
     omnibox.bootstrap({
         onSearch: (query) => {
