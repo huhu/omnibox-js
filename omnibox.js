@@ -53,6 +53,7 @@ export default class Omnibox {
         // Cache the last query and result to speed up the page down.
         this.cachedQuery = null;
         this.cachedResult = null;
+        this.cachedAppendixes = [];
         // A set of query which should not be cached.
         this.noCacheQueries = new Set();
         if (!this.extensionMode) {
@@ -196,8 +197,10 @@ export default class Omnibox {
 
             this.cachedQuery = query;
             this.cachedResult = results;
+            this.cachedAppendixes = appendixes;
         } else {
             results = this.cachedResult;
+            appendixes = this.cachedAppendixes;
         }
 
         let totalPage = Math.ceil(results.length / this.maxSuggestionSize);
