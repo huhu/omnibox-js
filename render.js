@@ -230,6 +230,7 @@ export class Render {
      * @param {curr, total} pagination 
      */
     suggest(suggestions, pagination) {
+        this.clearDropdown();
         this.container.classList.add("omn-filled");
 
         let dropdown = document.createElement('div');
@@ -268,7 +269,6 @@ export class Render {
             }
         }
 
-        this.clearDropdown();
         this.container.insertAdjacentElement('afterend', dropdown);
     }
 }
