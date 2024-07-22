@@ -197,26 +197,25 @@ export class Render {
     pageDown() {
         if (this.searchKeyword) {
             let { query, page } = parseInput(this.searchKeyword);
+            if (!query) {
+                page += 1;
+            }
             this.inputBox.value = `${query} ${PAGE_TURNER.repeat(page)}`;
-        } else {
-            this.inputBox.value = '-';
+            this.inputBox.dispatchEvent(new Event("input"));
         }
-        this.inputBox.dispatchEvent(new Event("input"));
     }
 
     pageUp() {
         if (this.searchKeyword) {
             let { query, page } = parseInput(this.searchKeyword);
-            page -= 1;
-            if (page > 1) {
-                this.inputBox.value = `${query} ${PAGE_TURNER.repeat(Math.max(0, page - 1))}`;
-            } else {
-                this.inputBox.value = query;
+            if (query) {
+                page -= 1;
             }
-        } else {
-            this.inputBox.value = '';
+            if (page > 0) {
+                this.inputBox.value = `${query} ${PAGE_TURNER.repeat(Math.max(0, page - 1))}`;
+            }
+            this.inputBox.dispatchEvent(new Event("input"));
         }
-        this.inputBox.dispatchEvent(new Event("input"));
     }
 
     /**
