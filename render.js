@@ -72,6 +72,15 @@ export class Render {
             if (event.key === 'ArrowUp' || event.key === 'ArrowDown' || event.key === "Enter") {
                 // Prevent the default behavior of arrow up and arrow down keys
                 event.preventDefault();
+                return;
+            }
+
+            if ((event.ctrlKey && event.key === 'p')) {
+                event.preventDefault(); // Prevent the default action
+                this.pageUp();
+            } else if (event.ctrlKey && event.key === 'n') {
+                event.preventDefault(); // Prevent the default action
+                this.pageDown();
             }
         });
         document.addEventListener('click', (event) => {
