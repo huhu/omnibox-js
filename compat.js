@@ -15,7 +15,7 @@ export default class Compat {
     }
 
     static isRunningInWebExtension() {
-        return typeof chrome === "object" && chrome.runtime
+        return typeof chrome === "object" && chrome.runtime && chrome.storage;
     }
 
     static omniboxPageSize() {
