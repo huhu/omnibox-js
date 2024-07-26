@@ -68,44 +68,10 @@ export class Render {
         };
         this.inputBox.oninput = this.trigger;
         this.inputBox.onfocus = this.trigger;
-        this.inputBox.addEventListener("keydown", (event) => {
-            if (event.key === 'ArrowUp' || event.key === 'ArrowDown' || event.key === "Enter") {
-                // Prevent the default behavior of arrow up and arrow down keys
-                event.preventDefault();
-                return;
-            }
-
-            if (event.ctrlKey) {
-                switch (event.key) {
-                    case 'p':
-                        event.preventDefault();
-                        this.pageUp();
-                        break;
-                    case 'n':
-                        event.preventDefault();
-                        this.pageDown();
-                        break;
-                    case "j":
-                        event.preventDefault();
-                        this.selectDown();
-                        break;
-                    case "k":
-                        event.preventDefault();
-                        this.selectUp();
-                        break;
-
-                }
-            }
-        });
-        document.addEventListener('click', (event) => {
-            if (!event.composedPath().includes(element)) {
-                // Click outside to clear dropdown
-                this.resetSearchKeyword();
-            }
-        });
-        document.addEventListener('keydown', async (event) => {
+        this.inputBox.addEventListener("keydown", async (event) => {
             switch (event.code) {
                 case 'Enter': {
+                    event.preventDefault();
                     let selected = document.querySelector('.omn-selected');
                     if (selected) {
                         if (event.metaKey) {
@@ -121,20 +87,50 @@ export class Render {
                             await listener(content, this.disposition);
                         }
                     }
-                    break;
+                    return;
                 }
                 case 'ArrowUp': {
+                    event.preventDefault();
                     this.selectUp();
-                    break;
+                    return;
                 }
                 case 'ArrowDown': {
+                    event.preventDefault();
                     this.selectDown();
-                    break;
+                    return;
                 }
                 case 'Escape': {
+                    event.preventDefault();
                     this.resetSearchKeyword();
-                    break;
+                    return;
                 }
+            }
+
+            if (event.ctrlKey) {
+                switch (event.key) {
+                    case 'n':
+                        event.preventDefault();
+                        this.pageDown();
+                        break;
+                    case 'p':
+                        event.preventDefault();
+                        this.pageUp();
+                        break;
+                    case "j":
+                        event.preventDefault();
+                        this.selectDown();
+                        break;
+                    case "k":
+                        event.preventDefault();
+                        this.selectUp();
+                        break;
+                }
+            }
+        });
+        document.addEventListener('click', (event) => {
+            if (!event.composedPath().includes(element)) {
+                // Click outside to clear dropdown
+                this.resetSearchKeyword();
             }
         });
     }
