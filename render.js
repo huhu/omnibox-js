@@ -75,12 +75,26 @@ export class Render {
                 return;
             }
 
-            if ((event.ctrlKey && event.key === 'p')) {
-                event.preventDefault(); // Prevent the default action
-                this.pageUp();
-            } else if (event.ctrlKey && event.key === 'n') {
-                event.preventDefault(); // Prevent the default action
-                this.pageDown();
+            if (event.ctrlKey) {
+                switch (event.key) {
+                    case 'p':
+                        event.preventDefault();
+                        this.pageUp();
+                        break;
+                    case 'n':
+                        event.preventDefault();
+                        this.pageDown();
+                        break;
+                    case "j":
+                        event.preventDefault();
+                        this.selectDown();
+                        break;
+                    case "k":
+                        event.preventDefault();
+                        this.selectUp();
+                        break;
+
+                }
             }
         });
         document.addEventListener('click', (event) => {
@@ -110,43 +124,11 @@ export class Render {
                     break;
                 }
                 case 'ArrowUp': {
-                    let selected = document.querySelector('.omn-selected');
-                    if (selected) {
-                        let newSelected = null;
-                        if (selected.previousElementSibling) {
-                            newSelected = selected.previousElementSibling;
-                        } else {
-                            // Already selected the fist item, but a arrow-up key pressed,
-                            // select the last item.
-                            newSelected = document.querySelector('.omn-dropdown-item:last-child');
-                        }
-
-                        if (newSelected) {
-                            selected.classList.remove('omn-selected');
-                            newSelected.classList.add('omn-selected')
-                            this.inputBox.value = newSelected.getAttribute('data-value');
-                        }
-                    }
+                    this.selectUp();
                     break;
                 }
                 case 'ArrowDown': {
-                    let selected = document.querySelector('.omn-selected');
-                    if (selected) {
-                        let newSelected = null;
-                        if (selected.nextElementSibling) {
-                            newSelected = selected.nextElementSibling;
-                        } else {
-                            // Already selected the last item, but a arrow-up key pressed,
-                            // select the fist item.
-                            newSelected = document.querySelector('.omn-dropdown-item:first-child');
-                        }
-
-                        if (newSelected) {
-                            selected.classList.remove('omn-selected');
-                            newSelected.classList.add('omn-selected')
-                            this.inputBox.value = newSelected.getAttribute('data-value');
-                        }
-                    }
+                    this.selectDown();
                     break;
                 }
                 case 'Escape': {
@@ -204,6 +186,46 @@ export class Render {
         let hint = document.querySelector('.omn-hint');
         if (hint) {
             hint.remove();
+        }
+    }
+
+    selectUp() {
+        let selected = document.querySelector('.omn-selected');
+        if (selected) {
+            let newSelected = null;
+            if (selected.previousElementSibling) {
+                newSelected = selected.previousElementSibling;
+            } else {
+                // Already selected the fist item, but a arrow-up key pressed,
+                // select the last item.
+                newSelected = document.querySelector('.omn-dropdown-item:last-child');
+            }
+
+            if (newSelected) {
+                selected.classList.remove('omn-selected');
+                newSelected.classList.add('omn-selected')
+                this.inputBox.value = newSelected.getAttribute('data-value');
+            }
+        }
+    }
+
+    selectDown() {
+        let selected = document.querySelector('.omn-selected');
+        if (selected) {
+            let newSelected = null;
+            if (selected.nextElementSibling) {
+                newSelected = selected.nextElementSibling;
+            } else {
+                // Already selected the last item, but a arrow-up key pressed,
+                // select the fist item.
+                newSelected = document.querySelector('.omn-dropdown-item:first-child');
+            }
+
+            if (newSelected) {
+                selected.classList.remove('omn-selected');
+                newSelected.classList.add('omn-selected')
+                this.inputBox.value = newSelected.getAttribute('data-value');
+            }
         }
     }
 
