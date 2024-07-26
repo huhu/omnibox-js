@@ -49,7 +49,7 @@ export class Render {
             element.style.position = "relative";
             element.innerHTML = OMNIBOX_HTML;
         }
-        this.container = document.querySelector(".omn-container");
+        this.container = element.querySelector(".omn-container");
         this.inputBox = element.querySelector("textarea");
         this.searchKeyword = "";
         if (placeholder) {
@@ -61,7 +61,7 @@ export class Render {
         this.disposition = DISPOSITION_CURRENT_TAB;
         this.onFooter = onFooter;
 
-        this.clearButton = document.querySelector(".omn-clear");
+        this.clearButton = element.querySelector(".omn-clear");
         if (this.clearButton) {
             this.clearButton.onclick = () => {
                 this.inputBox.value = "";
@@ -138,7 +138,9 @@ export class Render {
         });
 
         let clickOutSide = (event) => {
-            if (!event.composedPath().includes(element)) {
+            let dropdown = document.querySelector('.omn-dropdown');
+            if (!event.composedPath().includes(element)
+                || (dropdown && !event.composedPath().includes(element))) {
                 // Click outside to clear dropdown
                 this.resetSearchKeyword();
             }
