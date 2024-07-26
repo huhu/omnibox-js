@@ -77,7 +77,8 @@ export class Render {
         };
         this.inputBox.oninput = this.trigger;
         this.inputBox.onfocus = this.trigger;
-        this.inputBox.addEventListener("keydown", async (event) => {
+
+        let onKeyDown = async (event) => {
             switch (event.code) {
                 case 'Enter': {
                     event.preventDefault();
@@ -135,6 +136,16 @@ export class Render {
                         break;
                 }
             }
+        };
+
+        this.inputBox.addEventListener("keydown", async (event) => {
+            if (event.key === 'ArrowUp' || event.key === 'ArrowDown' || event.key === "Enter") {
+                // Prevent the default behavior of arrow up and arrow down keys
+                event.preventDefault();
+                return;
+            } else if ((event.ctrlKey && event.key === 'p') || (event.ctrlKey && event.key === 'n')) {
+                event.preventDefault(); // Prevent the default action
+            }
         });
 
         let clickOutSide = (event) => {
@@ -145,7 +156,9 @@ export class Render {
                 this.resetSearchKeyword();
             }
         };
+
         addEventListenerOnce('click', clickOutSide);
+        addEventListenerOnce('keydown', onKeyDown);
     }
 
     async render() {
