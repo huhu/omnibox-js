@@ -49,7 +49,7 @@ export class Render {
             element.style.position = "relative";
             element.innerHTML = OMNIBOX_HTML;
         }
-        this.container = element.querySelector(".omn-container");
+        this.container = document.querySelector(".omn-container");
         this.inputBox = element.querySelector("textarea");
         this.searchKeyword = "";
         if (placeholder) {
