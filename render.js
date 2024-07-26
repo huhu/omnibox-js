@@ -18,6 +18,15 @@ export const OMNIBOX_HTML = `
     </div>
 </div>`;
 
+// Wrapper function to add the event listener
+function addEventListenerOnce(eventName, handler) {
+    // Remove any existing listeners for this event
+    document.removeEventListener(eventName, handler);
+
+    // Add the new listener
+    document.addEventListener(eventName, handler);
+}
+
 export class Render {
     constructor({ el, element, icon, placeholder, onFooter }) {
         if (!el && !element) {
@@ -127,12 +136,14 @@ export class Render {
                 }
             }
         });
-        document.addEventListener('click', (event) => {
+
+        let clickOutSide = (event) => {
             if (!event.composedPath().includes(element)) {
                 // Click outside to clear dropdown
                 this.resetSearchKeyword();
             }
-        });
+        };
+        addEventListenerOnce('click', clickOutSide);
     }
 
     async render() {
