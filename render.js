@@ -78,7 +78,7 @@ export class Render {
         this.inputBox.oninput = this.trigger;
         this.inputBox.onfocus = this.trigger;
 
-        let onKeyDown = async (event) => {
+        this.onKeyDown = async (event) => {
             switch (event.code) {
                 case 'Enter': {
                     event.preventDefault();
@@ -148,7 +148,7 @@ export class Render {
             }
         });
 
-        let clickOutSide = (event) => {
+        this.clickOutSide = (event) => {
             let dropdown = document.querySelector('.omn-dropdown');
             if (!event.composedPath().includes(element)
                 || (dropdown && !event.composedPath().includes(element))) {
@@ -157,8 +157,13 @@ export class Render {
             }
         };
 
-        addEventListenerOnce('click', clickOutSide);
-        addEventListenerOnce('keydown', onKeyDown);
+        document.addEventListener('click', this.clickOutSide);
+        document.addEventListener('keydown', this.onKeyDown);
+    }
+
+    clearListeners() {
+        document.removeEventListener('click', this.clickOutSide);
+        document.removeEventListener('keydown', this.onKeyDown);
     }
 
     async render() {
