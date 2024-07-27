@@ -18,6 +18,14 @@ export const OMNIBOX_HTML = `
     </div>
 </div>`;
 
+// Wrapper function to add the event listener
+function addEventListenerOnce(eventName, handler) {
+    // Remove any existing listeners for this event
+    document.removeEventListener(eventName, handler);
+
+    // Add the new listener
+    document.addEventListener(eventName, handler);
+}
 
 export class Render {
     constructor({ el, element, icon, placeholder, onFooter }) {
@@ -70,89 +78,87 @@ export class Render {
         this.inputBox.oninput = this.trigger;
         this.inputBox.onfocus = this.trigger;
 
+        let onKeyDown = async (event) => {
+            switch (event.code) {
+                case 'Enter': {
+                    event.preventDefault();
+                    let selected = document.querySelector('.omn-selected');
+                    if (selected) {
+                        if (event.metaKey) {
+                            this.disposition = DISPOSITION_BACKROUND_TAB;
+                        } else if (event.altKey) {
+                            this.disposition = DISPOSITION_FOREGROUND_TAB;
+                        } else {
+                            this.disposition = DISPOSITION_CURRENT_TAB;
+                        }
+
+                        let content = selected.getAttribute('data-content');
+                        for (const listener of this.onInputEntered.listeners) {
+                            await listener(content, this.disposition);
+                        }
+                    }
+                    return;
+                }
+                case 'ArrowUp': {
+                    event.preventDefault();
+                    this.selectUp();
+                    return;
+                }
+                case 'ArrowDown': {
+                    event.preventDefault();
+                    this.selectDown();
+                    return;
+                }
+                case 'Escape': {
+                    event.preventDefault();
+                    this.resetSearchKeyword();
+                    return;
+                }
+            }
+
+            if (event.ctrlKey) {
+                switch (event.key) {
+                    case 'n':
+                        event.preventDefault();
+                        this.pageDown();
+                        break;
+                    case 'p':
+                        event.preventDefault();
+                        this.pageUp();
+                        break;
+                    case "j":
+                        event.preventDefault();
+                        this.selectDown();
+                        break;
+                    case "k":
+                        event.preventDefault();
+                        this.selectUp();
+                        break;
+                }
+            }
+        };
+
         this.inputBox.addEventListener("keydown", async (event) => {
             if (event.key === 'ArrowUp' || event.key === 'ArrowDown' || event.key === "Enter") {
                 // Prevent the default behavior of arrow up and arrow down keys
                 event.preventDefault();
+                return;
             } else if ((event.ctrlKey && event.key === 'p') || (event.ctrlKey && event.key === 'n')) {
                 event.preventDefault(); // Prevent the default action
             }
         });
 
-        // Prevent event being registered multiple times on document
-        if (!this.container.getAttribute("data-event-click")) {
-            this.container.setAttribute("data-event-click", true);
-            document.addEventListener('click', (event) => {
-                let dropdown = document.querySelector('.omn-dropdown');
-                if (!event.composedPath().includes(element)
-                    || (dropdown && !event.composedPath().includes(element))) {
-                    // Click outside to clear dropdown
-                    this.resetSearchKeyword();
-                }
-            });
-        }
-        if (!this.container.getAttribute("data-event-keydown")) {
-            this.container.setAttribute("data-event-keydown", true);
-            document.addEventListener('keydown', async (event) => {
-                switch (event.code) {
-                    case 'Enter': {
-                        event.preventDefault();
-                        let selected = document.querySelector('.omn-selected');
-                        if (selected) {
-                            if (event.metaKey) {
-                                this.disposition = DISPOSITION_BACKROUND_TAB;
-                            } else if (event.altKey) {
-                                this.disposition = DISPOSITION_FOREGROUND_TAB;
-                            } else {
-                                this.disposition = DISPOSITION_CURRENT_TAB;
-                            }
+        let clickOutSide = (event) => {
+            let dropdown = document.querySelector('.omn-dropdown');
+            if (!event.composedPath().includes(element)
+                || (dropdown && !event.composedPath().includes(element))) {
+                // Click outside to clear dropdown
+                this.resetSearchKeyword();
+            }
+        };
 
-                            let content = selected.getAttribute('data-content');
-                            for (const listener of this.onInputEntered.listeners) {
-                                await listener(content, this.disposition);
-                            }
-                        }
-                        return;
-                    }
-                    case 'ArrowUp': {
-                        event.preventDefault();
-                        this.selectUp();
-                        return;
-                    }
-                    case 'ArrowDown': {
-                        event.preventDefault();
-                        this.selectDown();
-                        return;
-                    }
-                    case 'Escape': {
-                        event.preventDefault();
-                        this.resetSearchKeyword();
-                        return;
-                    }
-                }
-
-                if (event.ctrlKey) {
-                    switch (event.key) {
-                        case 'n':
-                            event.preventDefault();
-                            this.pageDown();
-                            break;
-                        case 'p':
-                            event.preventDefault();
-                            this.pageUp();
-                            break;
-                        case "j":
-                            event.preventDefault();
-                            this.selectDown();
-                            break;
-                        case "k":
-                            event.preventDefault();
-                            this.selectUp();
-                            break;
-                    }
-                }
-            });
-        }
+        addEventListenerOnce('click', clickOutSide);
+        addEventListenerOnce('keydown', onKeyDown);
     }
 
     async render() {
