@@ -41,14 +41,19 @@ export function parseInput(input) {
     return { query: query.join(" "), page };
 }
 
-export default class Omnibox {
-    constructor({ render, defaultSuggestion, maxSuggestionSize = 8, hint = false }) {
-        this.render = render;
-        this.extensionMode = !(render instanceof Render);
+export class HeadlessOmnibox {
+    constructor({ onSearch, onFormat, onAppend, defaultSuggestion, maxSuggestionSize = 8 }) {
+        // The render instance is not required for headless omnibox.
+        this.render = null;
         this.browserType = Compat.browserType();
         this.maxSuggestionSize = maxSuggestionSize;
         this.defaultSuggestionDescription = this.escapeDescription(defaultSuggestion);
         this.defaultSuggestionContent = null;
+        this.globalEvent = new QueryEvent({
+            onSearch,
+            onFormat,
+            onAppend,
+        });
         this.queryEvents = [];
         // Cache the last query and result to speed up the page down.
         this.cachedQuery = null;
@@ -56,26 +61,17 @@ export default class Omnibox {
         this.cachedAppendixes = [];
         // A set of query which should not be cached.
         this.noCacheQueries = new Set();
-        if (!this.extensionMode) {
-            this.hintEnabled = hint;
+        // Whether running in browser extension mode. Default is false in headless mode.
+        this.extensionMode = false;
+    }
+
+    escapeDescription(description) {
+        if (this.extensionMode && this.browserType === 'firefox') {
+            // Firefox doesn't support tags in search suggestion.
+            return Compat.eliminateTags(description);
+        } else {
+            return description
         }
-    }
-
-    static extension({ defaultSuggestion, maxSuggestionSize = 8 }) {
-        return new Omnibox({
-            render: chrome.omnibox,
-            defaultSuggestion,
-            maxSuggestionSize,
-        });
-    }
-
-    static webpage({ element, el, icon, placeholder, defaultSuggestion, onFooter, maxSuggestionSize = 8, hint = true }) {
-        return new Omnibox({
-            render: new Render({ element, el, icon, placeholder, onFooter }),
-            defaultSuggestion,
-            maxSuggestionSize,
-            hint,
-        });
     }
 
     setDefaultSuggestion(description, content) {
@@ -88,99 +84,14 @@ export default class Omnibox {
         }
     }
 
-
-    escapeDescription(description) {
-        if (this.extensionMode && this.browserType === 'firefox') {
-            // Firefox doesn't support tags in search suggestion.
-            return Compat.eliminateTags(description);
-        } else {
-            return description
-        }
-    }
-
-    bootstrap({
-        onSearch,
-        onFormat,
-        onAppend,
-        onEmptyNavigate,
-        beforeNavigate,
-        afterNavigated
-    }) {
-        this.globalEvent = new QueryEvent({ onSearch, onFormat, onAppend });
-        if (this.extensionMode) {
-            this.setDefaultSuggestion(this.defaultSuggestionDescription);
-        }
-        let results;
-        let currentInput;
-        let defaultDescription;
-
-        this.render.onInputChanged.addListener(async (input, suggestFn) => {
-            // Set the default suggestion content to input instead null,
-            // this could prevent content null bug in onInputEntered().
-            this.defaultSuggestionContent = input;
-            if (!input) {
-                this.setDefaultSuggestion(this.defaultSuggestionDescription);
-                return;
-            }
-
-            currentInput = input;
-            let { query, page } = parseInput(input);
-            let searchResult = await this.search(query, page);
-            results = searchResult.results;
-            suggestFn(results, { curr: page, total: searchResult.totalPage });
-        });
-
-        this.render.onInputEntered.addListener(async (content, disposition) => {
-            let result;
-            // Give beforeNavigate a default function
-            beforeNavigate = beforeNavigate || (async (_, s) => s);
-
-            // A flag indicates whether the url navigate success
-            let navigated = false;
-            // The first item (aka default suggestion) is special in Chrome extension API,
-            // here the content is the user input.
-            if (content === currentInput) {
-                content = await beforeNavigate(this.cachedQuery, this.defaultSuggestionContent);
-                result = {
-                    content,
-                    description: defaultDescription,
-                };
-                if (URL_PROTOCOLS.test(content)) {
-                    Omnibox.navigateToUrl(content, disposition);
-                    navigated = true;
-                }
-            } else {
-                // Store raw content before navigate to find the correct result
-                let rawContent = content;
-                result = results.find(item => item.content === rawContent);
-                content = await beforeNavigate(this.cachedQuery, content);
-                if (URL_PROTOCOLS.test(content)) {
-                    Omnibox.navigateToUrl(content, disposition);
-                    navigated = true;
-
-                    // Ensure the result.content is the latest,
-                    // since the content returned by beforeNavigate() could be different from the raw one.
-                    if (result) {
-                        result.content = content;
-                    }
-                }
-            }
-
-            if (navigated && afterNavigated) {
-                await afterNavigated(this.cachedQuery, result);
-            } else if (onEmptyNavigate) {
-                await onEmptyNavigate(content, disposition);
-            }
-
-            if (this.extensionMode) {
-                this.setDefaultSuggestion(this.defaultSuggestionDescription);
-            } else {
-                this.render.resetSearchKeyword();
-            }
-        });
-    }
-
-    async search(query, page) {
+    /**
+     * Search the result by input.
+     * 
+     * @param {string} input 
+     * @returns 
+     */
+    async search(input) {
+        let { query, page } = parseInput(input);
         let results;
         let appendixes = [];
 
@@ -237,7 +148,7 @@ export default class Omnibox {
             this.setDefaultSuggestion(description, content);
         }
         results.push(...appendixes);
-        return { results, totalPage };
+        return { results, page, totalPage };
     }
 
     async performSearch(query) {
@@ -256,7 +167,7 @@ export default class Omnibox {
             });
 
         if (matchedEvent) {
-            if (this.hintEnabled && matchedEvent.name) {
+            if (this.render && this.hintEnabled && matchedEvent.name) {
                 this.render.setHint(matchedEvent.name);
             }
             result = await matchedEvent.performSearch(query);
@@ -264,7 +175,7 @@ export default class Omnibox {
                 appendixes.push(...await matchedEvent.onAppend(query));
             }
         } else {
-            if (this.hintEnabled) {
+            if (this.render && this.hintEnabled) {
                 this.render.removeHint();
             }
             result = await this.globalEvent.performSearch(query);
@@ -318,6 +229,119 @@ export default class Omnibox {
             regex,
             ...event,
         }));
+    }
+}
+
+export default class Omnibox {
+    constructor({ headless, render, hint = false }) {
+        // Copy all properties from the headless instance
+        Object.assign(this, headless);
+        // Copy methods from the headless instance
+        Object.getOwnPropertyNames(Object.getPrototypeOf(headless)).forEach(method => {
+            if (method !== 'constructor' && typeof headless[method] === 'function') {
+                this[method] = headless[method].bind(this);
+            }
+        });
+
+        this.render = render;
+        this.extensionMode = !(render instanceof Render);
+        if (this.extensionMode) {
+            this.hintEnabled = false;
+        } else {
+            this.hintEnabled = hint;
+        }
+    }
+
+    static extension(headless) {
+        return new Omnibox({
+            headless,
+            render: chrome.omnibox,
+        });
+    }
+
+    static webpage({ headless, element, el, icon, placeholder, onFooter, hint = true }) {
+        return new Omnibox({
+            headless,
+            render: new Render({ element, el, icon, placeholder, onFooter }),
+            hint,
+        });
+    }
+
+    bootstrap(
+        onEmptyNavigate,
+        beforeNavigate,
+        afterNavigated
+    ) {
+        if (this.extensionMode) {
+            this.setDefaultSuggestion(this.defaultSuggestionDescription);
+        }
+        let results;
+        let currentInput;
+        let defaultDescription;
+
+        this.render.onInputChanged.addListener(async (input, suggestFn) => {
+            // Set the default suggestion content to input instead null,
+            // this could prevent content null bug in onInputEntered().
+            this.defaultSuggestionContent = input;
+            if (!input) {
+                this.setDefaultSuggestion(this.defaultSuggestionDescription);
+                return;
+            }
+
+            currentInput = input;
+            let searchResult = await this.search(input);
+            results = searchResult.results;
+            suggestFn(results, { curr: searchResult.page, total: searchResult.totalPage });
+        });
+
+        this.render.onInputEntered.addListener(async (content, disposition) => {
+            let result;
+            // Give beforeNavigate a default function
+            beforeNavigate = beforeNavigate || (async (_, s) => s);
+
+            // A flag indicates whether the url navigate success
+            let navigated = false;
+            // The first item (aka default suggestion) is special in Chrome extension API,
+            // here the content is the user input.
+            if (content === currentInput) {
+                content = await beforeNavigate(this.cachedQuery, this.defaultSuggestionContent);
+                result = {
+                    content,
+                    description: defaultDescription,
+                };
+                if (URL_PROTOCOLS.test(content)) {
+                    Omnibox.navigateToUrl(content, disposition);
+                    navigated = true;
+                }
+            } else {
+                // Store raw content before navigate to find the correct result
+                let rawContent = content;
+                result = results.find(item => item.content === rawContent);
+                content = await beforeNavigate(this.cachedQuery, content);
+                if (URL_PROTOCOLS.test(content)) {
+                    Omnibox.navigateToUrl(content, disposition);
+                    navigated = true;
+
+                    // Ensure the result.content is the latest,
+                    // since the content returned by beforeNavigate() could be different from the raw one.
+                    if (result) {
+                        result.content = content;
+                    }
+                }
+            }
+
+            if (navigated && afterNavigated) {
+                await afterNavigated(this.cachedQuery, result);
+            } else if (onEmptyNavigate) {
+                await onEmptyNavigate(content, disposition);
+            }
+
+            if (this.extensionMode) {
+                this.setDefaultSuggestion(this.defaultSuggestionDescription);
+            } else {
+                this.render.resetSearchKeyword();
+            }
+        });
     }
 
     /**

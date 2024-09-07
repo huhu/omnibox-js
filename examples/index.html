@@ -25,7 +25,7 @@
     </div>
 </body>
 <script type="module">
-    import { Omnibox, QueryEvent, Render } from "../index.js";
+    import { Omnibox, QueryEvent, Render, HeadlessOmnibox } from "../index.js";
 
     let suggestions = {
         "https://github.com": "Github",
@@ -46,15 +46,36 @@
     suggestions = Object.entries(suggestions).map(([key, value]) => {
         return { content: key, description: value }
     });
-    const omnibox = Omnibox.webpage({
-        // element: document.querySelector(".omn-container"),
-        el: "#input",
-        icon: "https://rust.extension.sh/logo.png",
+    let headless = new HeadlessOmnibox({
         placeholder: "Start search with omnibox.js",
         defaultSuggestion: "Omnibox.js",
         maxSuggestionSize: 3,
+        onSearch: (query) => {
+            return suggestions.filter(({ description }) => description.toLowerCase().indexOf(query.toLowerCase()) > -1);
+        },
+        onFormat: (index, doc) => {
+            return { description: `<match>${doc.description}</match> - <dim>${doc.content}</dim>`, content: doc.content };
+        },
+        onAppend: (query) => {
+            return [{
+                content: `https://google.com/search?q=${query}`,
+                description: `Search <match>${query}</match> on google`,
+            }]
+        },
+    });
+    headless.addPrefixQueryEvent(":", {
+        name: "Command",
+        onSearch: (query) => {
+            return suggestions.filter(({ description }) => description.toLowerCase().indexOf(query.toLowerCase()) > -1);
+        },
+    })
+    const omnibox = Omnibox.webpage({
+        headless,
+        // element: document.querySelector(".omn-container"),
+        el: "#input",
+        icon: "https://rust.extension.sh/logo.png",
         onFooter: (render, pagination) => {
-            let footer = document.createElement("div"); 
+            let footer = document.createElement("div");
             footer.innerHTML = `
             <div style="display: flex;padding: 8px 10px; background-color: #abcdef">
                 <div>${pagination.curr}/${pagination.total}</div>
@@ -70,26 +91,7 @@
             return footer;
         }
     });
-    omnibox.bootstrap({
-        onSearch: (query) => {
-            return suggestions.filter(({ description }) => description.toLowerCase().indexOf(query.toLowerCase()) > -1);
-        },
-        onFormat: (index, doc) => {
-            return { description: `<match>${doc.description}</match> - <dim>${doc.content}</dim>`, content: doc.content };
-        },
-        onAppend: (query) => {
-            return [{
-                content: `https://google.com/search?q=${query}`,
-                description: `Search <match>${query}</match> on google`,
-            }]
-        },
-    });
-    omnibox.addPrefixQueryEvent(":", {
-        name: "Command",
-        onSearch: (query) => {
-            return suggestions.filter(({ description }) => description.toLowerCase().indexOf(query.toLowerCase()) > -1);
-        },
-    })
+    omnibox.bootstrap();
 </script>
 
 </html>
