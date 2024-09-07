@@ -70,7 +70,6 @@
         },
     })
     const omnibox = Omnibox.webpage({
-        headless,
         // element: document.querySelector(".omn-container"),
         el: "#input",
         icon: "https://rust.extension.sh/logo.png",
@@ -91,6 +90,7 @@
             return footer;
         }
     });
+    omnibox.extendFromHeadless(headless);
     omnibox.bootstrap();
 </script>
 

@@ -233,16 +233,7 @@ export class HeadlessOmnibox {
 }
 
 export default class Omnibox {
-    constructor({ headless, render, hint = false }) {
-        // Copy all properties from the headless instance
-        Object.assign(this, headless);
-        // Copy methods from the headless instance
-        Object.getOwnPropertyNames(Object.getPrototypeOf(headless)).forEach(method => {
-            if (method !== 'constructor' && typeof headless[method] === 'function') {
-                this[method] = headless[method].bind(this);
-            }
-        });
-
+    constructor({ render, hint = false }) {
         this.render = render;
         this.extensionMode = !(render instanceof Render);
         if (this.extensionMode) {
@@ -252,16 +243,34 @@ export default class Omnibox {
         }
     }
 
-    static extension(headless) {
+    /**
+     * Copy all properties from the headless instance
+     * 
+     * @param {HeadlessOmnibox} headless 
+     */
+    extendFromHeadless(headless) {
+        const desiredProps = Object.fromEntries(
+            Object.entries(headless).filter(([key]) => !['render', 'extensionMode', 'hintEnabled'].includes(key))
+        );
+        // Copy all properties from the headless instance
+        Object.assign(this, desiredProps);
+        // Copy methods from the headless instance
+        Object.getOwnPropertyNames(Object.getPrototypeOf(headless)).forEach(method => {
+            if (method !== 'constructor' && typeof headless[method] === 'function') {
+                this[method] = headless[method].bind(this);
+            }
+        });
+
+    }
+
+    static extension() {
         return new Omnibox({
-            headless,
             render: chrome.omnibox,
         });
     }
 
-    static webpage({ headless, element, el, icon, placeholder, onFooter, hint = true }) {
+    static webpage({ element, el, icon, placeholder, onFooter, hint = true }) {
         return new Omnibox({
-            headless,
             render: new Render({ element, el, icon, placeholder, onFooter }),
             hint,
         });
