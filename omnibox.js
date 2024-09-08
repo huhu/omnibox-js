@@ -65,9 +65,16 @@ export class HeadlessOmnibox {
         this.extensionMode = false;
     }
 
+    /**
+     * Escape the description according to the browser type.
+     * 
+     * @param {string} description 
+     * @returns 
+     */
     escapeDescription(description) {
-        if (this.extensionMode && this.browserType === 'firefox') {
+        if ((this.extensionMode && this.browserType === 'firefox') || !this.render) {
             // Firefox doesn't support tags in search suggestion.
+            // And the headless omnibox doesn't support tags too.
             return Compat.eliminateTags(description);
         } else {
             return description
