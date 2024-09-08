@@ -276,11 +276,11 @@ export default class Omnibox {
         });
     }
 
-    bootstrap(
+    bootstrap({
         onEmptyNavigate,
         beforeNavigate,
         afterNavigated
-    ) {
+    } = {}) {
         if (this.extensionMode) {
             this.setDefaultSuggestion(this.defaultSuggestionDescription);
         }
