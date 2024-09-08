@@ -1,5 +1,9 @@
 export default class Compat {
     static browserType() {
+        if (typeof navigator === 'undefined') {
+            return 'unknown';
+        }
+
         let userAgent = navigator.userAgent.toLowerCase();
         // The order is matter. Do not change it! 
         // You should know what you are doing.
