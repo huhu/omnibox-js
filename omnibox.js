@@ -132,6 +132,9 @@ export class HeadlessOmnibox {
                 if (event) {
                     // onAppend result has no event.
                     item = await event.format(item, index);
+                    if (!this.extensionMode) {
+                        item.icon = event.icon;
+                    }
                 }
                 if (uniqueUrls.has(item.content)) {
                     item.content += `?${uniqueUrls.size + 1}`;

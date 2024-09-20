@@ -41,7 +41,6 @@ export default class QueryEvent {
             // Create a new object to avoid modifying the original item.
             return {
                 ...item,
-                icon: this.icon,
                 event: this,
             };
         });
