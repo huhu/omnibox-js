@@ -42,10 +42,7 @@ export default class QueryEvent {
             return {
                 ...item,
                 icon: this.icon,
-                event: {
-                    format: this.format,
-                    searchedInput: this.searchedInput
-                }
+                event: this,
             };
         });
     }
