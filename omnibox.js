@@ -189,10 +189,8 @@ export class HeadlessOmnibox {
             let defaultSearchEvents = [];
             for (let event of this.queryEvents) {
                 // The isDefaultSearch hook method is preferred over defaultSearch property.
-                if (event.isDefaultSearch) {
-                    if (await event.isDefaultSearch()) {
-                        defaultSearchEvents.push(event);
-                    }
+                if (event.isDefaultSearch && (await event.isDefaultSearch())) {
+                    defaultSearchEvents.push(event);
                 } else if (event.defaultSearch) {
                     defaultSearchEvents.push(event);
                 }

@@ -299,7 +299,7 @@ export class Render {
         dropdown.appendChild(gapline);
 
         let items = document.createElement("div");
-        for (let [index, { content, description }] of suggestions.entries()) {
+        for (let [index, { content, description, icon }] of suggestions.entries()) {
             let li = document.createElement("div");
             li.classList.add("omn-dropdown-item");
             li.style.position = "relative";
@@ -312,9 +312,10 @@ export class Render {
             } else {
                 li.setAttribute("data-value", content);
             }
+            let i = icon || this.icon;
             li.innerHTML = `<div class="omn-dropdown-indicator"></div>
                             <a href="${content}">
-                            ${this.icon ? `<img src=\"${this.icon}\"/>` : ""}
+                            ${i ? `<img src=\"${i}\"/>` : ""}
                             ${parseOmniboxDescription(description)}
                             </a>`;
             items.appendChild(li);

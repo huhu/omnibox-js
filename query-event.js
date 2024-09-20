@@ -9,6 +9,7 @@ export default class QueryEvent {
         defaultSearch = false,
         isDefaultSearch = undefined,
         searchPriority = 0,
+        icon = undefined,
     }) {
         // The search function which should return a object array.
         this.onSearch = onSearch;
@@ -17,6 +18,7 @@ export default class QueryEvent {
         this.onAppend = onAppend;
 
         this.name = name;
+        this.icon = icon;
         this.prefix = prefix;
         this.regex = regex;
         // Whether enable the query as a default search.
@@ -36,9 +38,15 @@ export default class QueryEvent {
         this.searchedInput = input;
         let result = await this.onSearch(input);
         return result.map(item => {
-            // FIXME: item could be a non-object type, maybe we need Typescript to fix this...
-            item['event'] = this;
-            return item;
+            // Create a new object to avoid modifying the original item.
+            return {
+                ...item,
+                icon: this.icon,
+                event: {
+                    format: this.format,
+                    searchedInput: this.searchedInput
+                }
+            };
         });
     }
 

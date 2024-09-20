@@ -65,7 +65,10 @@
     });
     headless.addPrefixQueryEvent(":", {
         name: "Command",
+        defaultSearch: true,
+        icon: "https://query.rs/icon.png",
         onSearch: (query) => {
+            query = query.replace(/:/g, "");
             return suggestions.filter(({ description }) => description.toLowerCase().indexOf(query.toLowerCase()) > -1);
         },
     })
